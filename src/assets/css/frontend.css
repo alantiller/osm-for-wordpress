@@ -1,0 +1,47 @@
+.osm-public-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid #e7e7e7;
+}
+
+.osm-public-table thead {
+    background-color: #f9f9f9;
+    border: 1px solid #e7e7e7;
+}
+
+.osm-public-table th {
+    text-align: left;
+    padding: 12px;
+    font-weight: 600;
+}
+
+.osm-public-table td {
+    padding: 12px;
+}
+
+.osm-public-table tr:nth-child(even) {
+    background-color: #fbfbfb;
+}
+
+.osm-public-table a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.osm-public-table a:hover {
+    text-decoration: underline;
+}
+
+.osm-error-card {
+    padding: 20px;
+    border: 1px solid #e7e7e7;
+    border-radius: 5px;
+    background-color: #fbfbfb;
+    text-align: center;
+}
+
+.osm-error-card h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
