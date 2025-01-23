@@ -14,7 +14,7 @@ class OSM_Options {
         }
 
         // Confirm the date format is a valid PHP date format.
-        if ( ! self::validate_date_format( $format ) ) {
+        if ( ! self::validate_datetime_format( $format ) ) {
             throw new Exception( 'Invalid date format.' );
         }
 
@@ -28,15 +28,15 @@ class OSM_Options {
      */
     public static function get_date_format() {
         // Get the date format option.
-        $date_format = self::get( 'date_format' );
+        $date_format = self::get( 'date_format', null );
 
         // Confirm the date format is a valid PHP date format.
-        if ( ! empty( $date_format ) && ! self::validate_date_format( $date_format ) ) {
+        if ( ! empty( $date_format ) && ! self::validate_datetime_format( $date_format ) ) {
             // If the date format is invalid, use the default.
             $date_format = 'd M Y';
         }
 
-        return $date_format ?? false;
+        return $date_format;
     }
 
     /**
@@ -52,7 +52,7 @@ class OSM_Options {
         }
 
         // Confirm the time format is a valid PHP date format.
-        if ( ! self::validate_time_format( $format ) ) {
+        if ( ! self::validate_datetime_format( $format ) ) {
             throw new Exception( 'Invalid time format.' );
         }
 
@@ -66,15 +66,15 @@ class OSM_Options {
      */
     public static function get_time_format() {
         // Get the time format option.
-        $time_format = self::get( 'time_format' );
+        $time_format = self::get( 'time_format', null );
 
         // Confirm the time format is a valid PHP date format.
-        if ( ! empty( $time_format ) && ! self::validate_time_format( $time_format ) ) {
+        if ( ! empty( $time_format ) && ! self::validate_datetime_format( $time_format ) ) {
             // If the time format is invalid, use the default.
             $time_format = 'H:i';
         }
 
-        return $time_format ?? false;
+        return $time_format;
     }
 
     /**
@@ -117,41 +117,18 @@ class OSM_Options {
     }
 
     /**
-     * Validate a date format string.
+     * Validate a datetime format string.
      * 
      * @param string $format Date format string.
      * @return bool True if the format is valid, false otherwise.
      */
-    private static function validate_date_format( $format ) {
-        // Attempt to create a DateTime object using the provided format
+    private static function validate_datetime_format( $format ) {
         try {
-            $testDate = DateTime::createFromFormat($format, '2000-01-01');
-            $errors = DateTime::getLastErrors();
-        
-            // If there are no errors or warnings, the format is valid
-            return $errors['warning_count'] === 0 && $errors['error_count'] === 0;
+            $testDate = new DateTime();
+            $testDate->format($format); // Attempt to format with the given string
+            return true;
         } catch (Exception $e) {
-            // Catch any exceptions and treat the format as invalid
-            return false;
-        }  
-    }
-
-    /**
-     * Validate a time format string.
-     * 
-     * @param string $format Time format string.
-     * @return bool True if the format is valid, false otherwise.
-     */
-    private static function validate_time_format( $format ) {
-        // Attempt to create a DateTime object using the provided format
-        try {
-            $testTime = DateTime::createFromFormat($format, '12:34:56');
-            $errors = DateTime::getLastErrors();
-        
-            // If there are no errors or warnings, the format is valid
-            return $errors['warning_count'] === 0 && $errors['error_count'] === 0;
-        } catch (Exception $e) {
-            // Catch any exceptions and treat the format as invalid
+            // If an exception is thrown, the format is invalid
             return false;
         }
     }
