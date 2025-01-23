@@ -38,9 +38,20 @@ class OSM_Admin {
         update_option( 'osm_client_secret', $client_secret );
 
         try {
+            // Attempt to authorize the client
             OSM_API::authorize(true);
+
+            // Clear the enable sections
+            delete_option( 'osm_enabled_sections' );
+
+            // Set the success message
             set_transient( 'osm_admin_notice', [ 'type' => 'success', 'message' => 'Authentication saved and verified successfully.' ], 10 );
         } catch ( Exception $e ) {
+            // Clear the client ID and secret
+            delete_option( 'osm_client_id' );
+            delete_option( 'osm_client_secret' );
+
+            // Set the error message
             set_transient( 'osm_admin_notice', [ 'type' => 'error', 'message' => 'Failed to authenticate: ' . $e->getMessage() ], 10 );
         }
 
