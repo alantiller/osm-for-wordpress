@@ -9,7 +9,7 @@
     <tbody>
         <?php foreach ( $programme as $item ): ?>
             <tr>
-                <td style="white-space: nowrap;"><?php echo esc_html( date( 'd M Y', strtotime( $item['meetingdate'] ) ) ); ?></td>
+                <td style="white-space: nowrap;"><?php echo esc_html( date( $date_format, strtotime( $item['meetingdate'] ) ) ); ?></td>
                 <td style="white-space: nowrap;"><?php echo esc_html( $item['title'] ); ?></td>
                 <td><?php echo esc_html( $item['notesforparents'] ); ?></td>
             </tr>
