@@ -111,6 +111,10 @@ Example:
 - **Authentication Tab**:
   - Enter and manage your OSM **Client ID** and **Client Secret**.
 
+- **Advanced Options**:
+  - **Date Format**: Customize the date format used in the plugin. Default: `d/m/Y`.
+  - **Time Format**: Customize the time format used in the plugin. Default: `H:i`.
+
 ---
 
 ## Caching
