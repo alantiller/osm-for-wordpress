@@ -1,11 +1,22 @@
 <?php
 
 class OSM_Shortcodes {
+    /**
+     * OSM_Shortcodes constructor
+     * 
+     * @return void
+     */
     public function __construct() {
         add_shortcode( 'osm_programme', [ $this, 'render_programme' ] );
         add_shortcode( 'osm_events', [ $this, 'render_events' ] );
     }
 
+    /**
+     * Render the programme shortcode
+     * 
+     * @param array $atts Shortcode attributes
+     * @return string Shortcode output
+     */
     public function render_programme( $atts ) {
         try {
             // Get the attributes
@@ -63,6 +74,12 @@ class OSM_Shortcodes {
         }
     }
 
+    /**
+     * Render the events shortcode
+     * 
+     * @param array $atts Shortcode attributes
+     * @return string Shortcode output
+     */
     public function render_events( $atts ) {
         try {
             // Get the attributes
