@@ -11,6 +11,7 @@
         <a href="<?php echo admin_url( 'admin.php?page=osm-for-wordpress&tab=general' ); ?>" class="nav-tab <?php echo $active_tab === 'general' ? 'nav-tab-active' : ''; ?>">General</a>
         <a href="<?php echo admin_url( 'admin.php?page=osm-for-wordpress&tab=shortcodes' ); ?>" class="nav-tab <?php echo $active_tab === 'shortcodes' ? 'nav-tab-active' : ''; ?>">Shortcodes</a>
         <a href="<?php echo admin_url( 'admin.php?page=osm-for-wordpress&tab=sections' ); ?>" class="nav-tab <?php echo $active_tab === 'sections' ? 'nav-tab-active' : ''; ?>">Sections Enabled</a>
+        <a href="<?php echo admin_url( 'admin.php?page=osm-for-wordpress&tab=advanced_options' ); ?>" class="nav-tab <?php echo $active_tab === 'advanced_options' ? 'nav-tab-active' : ''; ?>">Advanced Options</a>
         <a href="<?php echo admin_url( 'admin.php?page=osm-for-wordpress&tab=authentication' ); ?>" class="nav-tab <?php echo $active_tab === 'authentication' ? 'nav-tab-active' : ''; ?>">Authentication</a>
     </h2>
 
@@ -116,19 +117,41 @@
             </table>
             <?php submit_button( 'Save Sections' ); ?>
         </form>
-
+    <?php elseif ( $active_tab === 'advanced_options' ): ?>
+        <h2>Advanced Options</h2>
+        <p>These options allow you to further customise the way the plugin behaves and displays data.</p>
+        <form method="post" action="<?php echo admin_url( 'admin-post.php?action=osm_save_advanced_options' ); ?>">
+            <?php wp_nonce_field( 'osm_advanced_options_nonce' ); ?>
+            <table class="form-table">
+                <tr>
+                    <th><label for="osm_date_format">Date Format</label></th>
+                    <td>
+                        <input type="text" id="osm_date_format" name="osm_date_format" value="<?php echo esc_attr( $advanced_options['osm_date_format'] ); ?>" placeholder="d M Y" class="regular-text">
+                        <p class="description">You can enter any valid PHP date format above, for more information see the <a href="https://www.php.net/manual/en/datetime.format.php" target="_blank">PHP documentation</a>.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th><label for="osm_time_format">Time Format</label></th>
+                    <td>
+                        <input type="text" id="osm_time_format" name="osm_time_format" value="<?php echo esc_attr( $advanced_options['osm_time_format'] ); ?>" placeholder="H:i" class="regular-text">
+                        <p class="description">You can enter any valid PHP time format above, for more information see the <a href="https://www.php.net/manual/en/datetime.format.php" target="_blank">PHP documentation</a>.</p>
+                    </td>
+                </tr>
+            </table>
+            <?php submit_button( 'Save Advanced Options' ); ?>
+        </form>
     <?php elseif ( $active_tab === 'authentication' ): ?>
         <h2>Authentication</h2>
-        <form method="post" action="<?php echo admin_url( 'admin-post.php?action=osm_save_auth' ); ?>">
+        <form method="post" action="<?php echo admin_url( 'admin-post.php?action=osm_save_auth' ); ?>" autocomplete="off">
             <?php wp_nonce_field( 'osm_auth_nonce' ); ?>
             <table class="form-table">
                 <tr>
                     <th><label for="osm_client_id">Client ID</label></th>
-                    <td><input type="text" id="osm_client_id" name="osm_client_id" placeholder="<?php if ($client_id) {echo 'Value hidden for security. Reset Configuration to clear.';} ?>" value="" class="regular-text"></td>
+                    <td><input type="text" id="osm_client_id" autocomplete="off" name="osm_client_id" placeholder="<?php if ($client_id) {echo 'Value hidden for security. Reset Configuration to clear.';} ?>" value="" class="regular-text"></td>
                 </tr>
                 <tr>
                     <th><label for="osm_client_secret">Client Secret</label></th>
-                    <td><input type="password" id="osm_client_secret" name="osm_client_secret" placeholder="<?php if ($client_secret) {echo 'Value hidden for security. Reset Configuration to clear.';} ?>" value="" class="regular-text"></td>
+                    <td><input type="password" id="osm_client_secret" autocomplete="off" name="osm_client_secret" placeholder="<?php if ($client_secret) {echo 'Value hidden for security. Reset Configuration to clear.';} ?>" value="" class="regular-text"></td>
                 </tr>
             </table>
             <?php submit_button( 'Save & Authenticate' ); ?>

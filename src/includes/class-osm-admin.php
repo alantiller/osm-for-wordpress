@@ -7,6 +7,7 @@ class OSM_Admin {
         add_action( 'admin_post_osm_save_sections', [ $this, 'save_sections' ] );
         add_action( 'admin_post_osm_purge_cache', [ $this, 'purge_cache' ] );
         add_action( 'admin_post_osm_reset_configuration', [ $this, 'reset_configuration' ] );
+        add_action( 'admin_post_osm_save_advanced_options', [ $this, 'save_advanced_options' ] );
         add_action( 'admin_notices', [ $this, 'display_admin_notices' ] );
     }
 
@@ -19,6 +20,10 @@ class OSM_Admin {
         $client_id = get_option( 'osm_client_id' );
         $client_secret = get_option( 'osm_client_secret' );
         $enabled_sections = get_option( 'osm_enabled_sections', [] );
+        $advanced_options = [
+            'osm_date_format' => OSM_Options::get_date_format() ?? '',
+            'osm_time_format' => OSM_Options::get_time_format() ?? '',
+        ];
 
         include OSM_TEMPLATES_DIR . '/admin/settings.php';
     }
@@ -33,9 +38,20 @@ class OSM_Admin {
         update_option( 'osm_client_secret', $client_secret );
 
         try {
+            // Attempt to authorize the client
             OSM_API::authorize(true);
+
+            // Clear the enable sections
+            delete_option( 'osm_enabled_sections' );
+
+            // Set the success message
             set_transient( 'osm_admin_notice', [ 'type' => 'success', 'message' => 'Authentication saved and verified successfully.' ], 10 );
         } catch ( Exception $e ) {
+            // Clear the client ID and secret
+            delete_option( 'osm_client_id' );
+            delete_option( 'osm_client_secret' );
+
+            // Set the error message
             set_transient( 'osm_admin_notice', [ 'type' => 'error', 'message' => 'Failed to authenticate: ' . $e->getMessage() ], 10 );
         }
 
@@ -59,6 +75,27 @@ class OSM_Admin {
 
         wp_redirect( admin_url( 'admin.php?page=osm-for-wordpress' ) );
         exit;
+    }
+
+    public function save_advanced_options() {
+        check_admin_referer( 'osm_advanced_options_nonce' );
+
+        $date_format = sanitize_text_field( $_POST['osm_date_format'] );
+        $time_format = sanitize_text_field( $_POST['osm_time_format'] );
+
+        try {
+            OSM_Options::set_date_format( $date_format );
+            OSM_Options::set_time_format( $time_format );
+
+            set_transient( 'osm_admin_notice', [ 'type' => 'success', 'message' => 'Advanced options saved successfully.' ], 10 );
+    
+            wp_redirect( admin_url( 'admin.php?page=osm-for-wordpress&tab=advanced_options' ) );
+            exit;
+        } catch ( Exception $e ) {
+            set_transient( 'osm_admin_notice', [ 'type' => 'error', 'message' => 'Failed to save advanced options: ' . $e->getMessage() ], 10 );
+            wp_redirect( admin_url( 'admin.php?page=osm-for-wordpress&tab=advanced_options' ) );
+            exit;
+        }
     }
 
     public function purge_cache() {
