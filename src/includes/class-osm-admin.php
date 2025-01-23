@@ -73,8 +73,8 @@ class OSM_Admin {
         $time_format = sanitize_text_field( $_POST['osm_time_format'] );
 
         try {
-            if ( ! empty( $date_format ) ) { OSM_Options::set_date_format( $date_format ); }
-            if ( ! empty( $time_format ) ) { OSM_Options::set_time_format( $time_format ); }
+            OSM_Options::set_date_format( $date_format );
+            OSM_Options::set_time_format( $time_format );
 
             set_transient( 'osm_admin_notice', [ 'type' => 'success', 'message' => 'Advanced options saved successfully.' ], 10 );
     

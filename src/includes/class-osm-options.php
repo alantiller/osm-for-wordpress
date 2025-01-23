@@ -8,13 +8,8 @@ class OSM_Options {
      * @return void
      */
     public static function set_date_format( $format ) {
-        // Confirm the date format is not empty.
-        if ( empty( $format ) ) {
-            throw new Exception( 'No date format provided.' );
-        }
-
         // Confirm the date format is a valid PHP date format.
-        if ( ! self::validate_datetime_format( $format ) ) {
+        if ( ! empty( $format ) && ! self::validate_datetime_format( $format ) ) {
             throw new Exception( 'Invalid date format.' );
         }
 
@@ -46,13 +41,8 @@ class OSM_Options {
      * @return void
      */
     public static function set_time_format( $format ) {
-        // Confirm the time format is not empty.
-        if ( empty( $format ) ) {
-            throw new Exception( 'No time format provided.' );
-        }
-
         // Confirm the time format is a valid PHP date format.
-        if ( ! self::validate_datetime_format( $format ) ) {
+        if ( ! empty( $format ) && ! self::validate_datetime_format( $format ) ) {
             throw new Exception( 'Invalid time format.' );
         }
 
