@@ -59,6 +59,9 @@ class OSM_Shortcodes {
                 throw new Exception( $futureonly ? 'Sorry, we couldn\'t find upcoming meetings, please check back later.' : 'Sorry, no programme is currently available, please check back later.' );
             }
 
+            // Load the date format
+            $date_format = OSM_Options::get_date_format();
+
             // Render the programme
             ob_start();
             include OSM_TEMPLATES_DIR . '/shortcode/programme.php';
@@ -123,6 +126,10 @@ class OSM_Shortcodes {
             if ( empty( $events ) ) {
                 throw new Exception( $futureonly ? 'Sorry, we couldn\'t find upcoming events, please check back later.' : 'Sorry, no events are currently available, please check back later.' );
             }
+
+            // Load the date and time formats
+            $date_format = OSM_Options::get_date_format();
+            $time_format = OSM_Options::get_time_format();
 
             // Render the events
             ob_start();
