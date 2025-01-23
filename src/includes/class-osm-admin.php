@@ -19,6 +19,10 @@ class OSM_Admin {
         $client_id = get_option( 'osm_client_id' );
         $client_secret = get_option( 'osm_client_secret' );
         $enabled_sections = get_option( 'osm_enabled_sections', [] );
+        $advanced_options = [
+            'osm_date_format' => OSM_Options::get_date_format() ?? '',
+            'osm_time_format' => OSM_Options::get_time_format() ?? '',
+        ];
 
         include OSM_TEMPLATES_DIR . '/admin/settings.php';
     }
@@ -56,6 +60,21 @@ class OSM_Admin {
         update_option( 'osm_enabled_sections', $enabled_sections );
 
         set_transient( 'osm_admin_notice', [ 'type' => 'success', 'message' => 'Sections updated successfully.' ], 10 );
+
+        wp_redirect( admin_url( 'admin.php?page=osm-for-wordpress' ) );
+        exit;
+    }
+
+    public function save_advanced_options() {
+        check_admin_referer( 'osm_advanced_options_nonce' );
+
+        $date_format = sanitize_text_field( $_POST['osm_date_format'] );
+        $time_format = sanitize_text_field( $_POST['osm_time_format'] );
+
+        OSM_Options::set_date_format( $date_format );
+        OSM_Options::set_time_format( $time_format );
+
+        set_transient( 'osm_admin_notice', [ 'type' => 'success', 'message' => 'Advanced options saved successfully.' ], 10 );
 
         wp_redirect( admin_url( 'admin.php?page=osm-for-wordpress' ) );
         exit;
