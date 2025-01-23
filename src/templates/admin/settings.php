@@ -125,13 +125,17 @@
             <table class="form-table">
                 <tr>
                     <th><label for="osm_date_format">Date Format</label></th>
-                    <td><input type="text" id="osm_date_format" name="osm_date_format" value="<?php echo esc_attr( $advanced_options['osm_date_format'] ); ?>" placeholder="d M Y" class="regular-text"></td>
-                    <td><p class="description">You can enter any valid PHP date format above, for more information see the <a href="https://www.php.net/manual/en/datetime.format.php" target="_blank">PHP documentation</a>.</p></td>
+                    <td>
+                        <input type="text" id="osm_date_format" name="osm_date_format" value="<?php echo esc_attr( $advanced_options['osm_date_format'] ); ?>" placeholder="d M Y" class="regular-text">
+                        <p class="description">You can enter any valid PHP date format above, for more information see the <a href="https://www.php.net/manual/en/datetime.format.php" target="_blank">PHP documentation</a>.</p>
+                    </td>
                 </tr>
                 <tr>
                     <th><label for="osm_time_format">Time Format</label></th>
-                    <td><input type="text" id="osm_time_format" name="osm_time_format" value="<?php echo esc_attr( $advanced_options['osm_time_format'] ); ?>" placeholder="H:i" class="regular-text"></td>
-                    <td><p class="description">You can enter any valid PHP time format above, for more information see the <a href="https://www.php.net/manual/en/datetime.format.php" target="_blank">PHP documentation</a>.</p></td>
+                    <td>
+                        <input type="text" id="osm_time_format" name="osm_time_format" value="<?php echo esc_attr( $advanced_options['osm_time_format'] ); ?>" placeholder="H:i" class="regular-text">
+                        <p class="description">You can enter any valid PHP time format above, for more information see the <a href="https://www.php.net/manual/en/datetime.format.php" target="_blank">PHP documentation</a>.</p>
+                    </td>
                 </tr>
             </table>
             <?php submit_button( 'Save Advanced Options' ); ?>
