@@ -7,6 +7,7 @@ class OSM_Admin {
         add_action( 'admin_post_osm_save_sections', [ $this, 'save_sections' ] );
         add_action( 'admin_post_osm_purge_cache', [ $this, 'purge_cache' ] );
         add_action( 'admin_post_osm_reset_configuration', [ $this, 'reset_configuration' ] );
+        add_action( 'admin_post_osm_save_advanced_options', [ $this, 'save_advanced_options' ] );
         add_action( 'admin_notices', [ $this, 'display_admin_notices' ] );
     }
 
@@ -71,13 +72,19 @@ class OSM_Admin {
         $date_format = sanitize_text_field( $_POST['osm_date_format'] );
         $time_format = sanitize_text_field( $_POST['osm_time_format'] );
 
-        OSM_Options::set_date_format( $date_format );
-        OSM_Options::set_time_format( $time_format );
+        try {
+            if ( ! empty( $date_format ) ) { OSM_Options::set_date_format( $date_format ); }
+            if ( ! empty( $time_format ) ) { OSM_Options::set_time_format( $time_format ); }
 
-        set_transient( 'osm_admin_notice', [ 'type' => 'success', 'message' => 'Advanced options saved successfully.' ], 10 );
-
-        wp_redirect( admin_url( 'admin.php?page=osm-for-wordpress' ) );
-        exit;
+            set_transient( 'osm_admin_notice', [ 'type' => 'success', 'message' => 'Advanced options saved successfully.' ], 10 );
+    
+            wp_redirect( admin_url( 'admin.php?page=osm-for-wordpress&tab=advanced_options' ) );
+            exit;
+        } catch ( Exception $e ) {
+            set_transient( 'osm_admin_notice', [ 'type' => 'error', 'message' => 'Failed to save advanced options: ' . $e->getMessage() ], 10 );
+            wp_redirect( admin_url( 'admin.php?page=osm-for-wordpress&tab=advanced_options' ) );
+            exit;
+        }
     }
 
     public function purge_cache() {
