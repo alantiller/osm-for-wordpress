@@ -10,12 +10,12 @@ class OSM_Options {
     public static function set_date_format( $format ) {
         // Confirm the date format is not empty.
         if ( empty( $format ) ) {
-            return;
+            throw new Exception( 'No date format provided.' );
         }
 
         // Confirm the date format is a valid PHP date format.
         if ( ! self::validate_date_format( $format ) ) {
-            return;
+            throw new Exception( 'Invalid date format.' );
         }
 
         self::set( 'date_format', $format );
@@ -28,15 +28,15 @@ class OSM_Options {
      */
     public static function get_date_format() {
         // Get the date format option.
-        $date_format = self::get( 'date_format', 'd M Y' );
+        $date_format = self::get( 'date_format' );
 
         // Confirm the date format is a valid PHP date format.
-        if ( ! self::validate_date_format( $date_format ) ) {
+        if ( ! empty( $date_format ) && ! self::validate_date_format( $date_format ) ) {
             // If the date format is invalid, use the default.
             $date_format = 'd M Y';
         }
 
-        return $date_format;
+        return $date_format ?? false;
     }
 
     /**
@@ -48,12 +48,12 @@ class OSM_Options {
     public static function set_time_format( $format ) {
         // Confirm the time format is not empty.
         if ( empty( $format ) ) {
-            return;
+            throw new Exception( 'No time format provided.' );
         }
 
         // Confirm the time format is a valid PHP date format.
         if ( ! self::validate_time_format( $format ) ) {
-            return;
+            throw new Exception( 'Invalid time format.' );
         }
 
         self::set( 'time_format', $format );
@@ -66,15 +66,15 @@ class OSM_Options {
      */
     public static function get_time_format() {
         // Get the time format option.
-        $time_format = self::get( 'time_format', 'H:i' );
+        $time_format = self::get( 'time_format' );
 
         // Confirm the time format is a valid PHP date format.
-        if ( ! self::validate_time_format( $time_format ) ) {
+        if ( ! empty( $time_format ) && ! self::validate_time_format( $time_format ) ) {
             // If the time format is invalid, use the default.
             $time_format = 'H:i';
         }
 
-        return $time_format;
+        return $time_format ?? false;
     }
 
     /**
