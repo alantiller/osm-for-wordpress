@@ -60,7 +60,7 @@ class OSM_Shortcodes {
             }
 
             // Load the date format
-            $date_format = OSM_Options::get_date_format();
+            $date_format = OSM_Options::get_date_format() ?? 'd M Y';
 
             // Render the programme
             ob_start();
@@ -128,8 +128,8 @@ class OSM_Shortcodes {
             }
 
             // Load the date and time formats
-            $date_format = OSM_Options::get_date_format();
-            $time_format = OSM_Options::get_time_format();
+            $date_format = OSM_Options::get_date_format() ?? 'd M Y';
+            $time_format = OSM_Options::get_time_format() ?? 'H:i';
 
             // Render the events
             ob_start();
