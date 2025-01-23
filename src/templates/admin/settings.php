@@ -142,16 +142,16 @@
         </form>
     <?php elseif ( $active_tab === 'authentication' ): ?>
         <h2>Authentication</h2>
-        <form method="post" action="<?php echo admin_url( 'admin-post.php?action=osm_save_auth' ); ?>">
+        <form method="post" action="<?php echo admin_url( 'admin-post.php?action=osm_save_auth' ); ?>" autocomplete="off">
             <?php wp_nonce_field( 'osm_auth_nonce' ); ?>
             <table class="form-table">
                 <tr>
                     <th><label for="osm_client_id">Client ID</label></th>
-                    <td><input type="text" id="osm_client_id" name="osm_client_id" placeholder="<?php if ($client_id) {echo 'Value hidden for security. Reset Configuration to clear.';} ?>" value="" class="regular-text"></td>
+                    <td><input type="text" id="osm_client_id" autocomplete="off" name="osm_client_id" placeholder="<?php if ($client_id) {echo 'Value hidden for security. Reset Configuration to clear.';} ?>" value="" class="regular-text"></td>
                 </tr>
                 <tr>
                     <th><label for="osm_client_secret">Client Secret</label></th>
-                    <td><input type="password" id="osm_client_secret" name="osm_client_secret" placeholder="<?php if ($client_secret) {echo 'Value hidden for security. Reset Configuration to clear.';} ?>" value="" class="regular-text"></td>
+                    <td><input type="password" id="osm_client_secret" autocomplete="off" name="osm_client_secret" placeholder="<?php if ($client_secret) {echo 'Value hidden for security. Reset Configuration to clear.';} ?>" value="" class="regular-text"></td>
                 </tr>
             </table>
             <?php submit_button( 'Save & Authenticate' ); ?>
