@@ -2,7 +2,7 @@
 /**
  * Plugin Name: OSM for WordPress
  * Description: A quick and easy way to display programmes and events from Online Scout Manager on your website, with support for multiple sections.
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: Alan Tiller
  * Author URI: https://www.alantiller.com
  * License: MIT
