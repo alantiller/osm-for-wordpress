@@ -50,6 +50,7 @@ class OSM_For_WordPress {
     private function load_dependencies() {
         new OSM_Admin();
         new OSM_Shortcodes();
+        new OSM_Divi();
     }
 
     private function init_hooks() {
