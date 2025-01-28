@@ -1,0 +1,22 @@
+{
+  "apiVersion": 2,
+  "name": "osm/events",
+  "title": "OSM Events",
+  "category": "widgets",
+  "icon": "calendar-alt",
+  "description": "Display the OSM events for a section.",
+  "attributes": {
+    "sectionid": {
+      "type": "string",
+      "default": ""
+    },
+    "futureonly": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "editorScript": "build/events-editor.js",
+  "editorStyle": "build/events-editor.css",
+  "style": "build/events-style.css",
+  "render": "file:./render.php"
+}

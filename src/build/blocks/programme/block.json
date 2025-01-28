@@ -1,0 +1,22 @@
+{
+  "apiVersion": 2,
+  "name": "osm/programme",
+  "title": "OSM Programme",
+  "category": "widgets",
+  "icon": "calendar",
+  "description": "Display the OSM programme for a section.",
+  "attributes": {
+    "sectionid": {
+      "type": "string",
+      "default": ""
+    },
+    "futureonly": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "editorScript": "build/programme-editor.js",
+  "editorStyle": "build/programme-editor.css",
+  "style": "build/programme-style.css",
+  "render": "file:./render.php"
+}
