@@ -51,6 +51,7 @@ class OSM_For_WordPress {
         new OSM_Admin();
         new OSM_Shortcodes();
         new OSM_Divi();
+        new OSM_Blocks();
     }
 
     private function init_hooks() {
