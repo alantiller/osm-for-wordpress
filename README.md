@@ -36,7 +36,10 @@ To authenticate with the OSM API, you'll need a **Client ID** and **Client Secre
 4. Click **Developer Tools** from the menu on the left-hand side.
 5. Click **Create Application**.
 6. Provide a name for your application and click **Save**.
-7. The **Client ID** and **Client Secret** will be displayed **once only**. Make sure to copy and save them securely.
+7. Enter "**I am a developer**" into the Confirmation box and click "**Reveal Credentials**".
+8. The **Client ID** and **Client Secret** will be displayed **once only**. Make sure to copy and save them securely.
+9. Close the window, then on the application you just created, click "**Edit**".
+10. Tick the box labelled "**Client Credentials Grant**" and click "**Save**".
 
 ### Step 2: Authenticate with OSM
 
