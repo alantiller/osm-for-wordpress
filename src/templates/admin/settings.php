@@ -164,10 +164,14 @@
                 <li>Click <strong>Developer Tools</strong> from the menu on the left-hand side.</li>
                 <li>Click <strong>Create Application</strong>.</li>
                 <li>Provide a name for your application and click <strong>Save</strong>.</li>
+                <li>Type "I am a developer" into the Confirmation field and click "Reveal Credentials"</li>
                 <li>
                     The <strong>Client ID</strong> and <strong>Client Secret</strong> will be displayed <em>once only</em>. 
-                    Make sure to copy them both and paste them into the fields above.
+                    Make sure you note them down as they will be required in the following steps.
                 </li>
+                <li>Close the window, then on the application you just created, click "Edit"</li>
+                <li>Tick the box labelled "Client Credentials Grant" and click <strong>Save</strong>.</li>
+                <li>Head back to the wordpress plugin (here), and past in the <strong>Client ID</strong> and <strong>Client Secret</strong>.
                 <li>Click <strong>Save & Authenticate</strong> to authenticate your application.</li>
             </ol>
         </form>
