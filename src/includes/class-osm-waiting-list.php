@@ -180,7 +180,7 @@ class OSM_Waiting_List {
     public static function render( $sectionids, bool $preview = false ): string {
         $section_id = self::section_id( get_option( 'osm_waiting_list_section_id', 0 ) );
         if ( ! is_array( $sectionids ) || $section_id < 1 || ( $sectionids && array_values( array_map( [ self::class, 'section_id' ], $sectionids ) ) !== [ $section_id ] ) ) {
-            throw new RuntimeException( 'Select a waiting-list section in Configuration.' );
+            throw new RuntimeException( 'Select a section on the Waiting List settings page.' );
         }
         $sections = OSM_API::get_sections();
         if ( ! isset( $sections[ $section_id ] ) ) { throw new RuntimeException( 'The waiting-list section is unavailable.' ); }

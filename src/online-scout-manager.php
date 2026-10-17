@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Online Scout Manager
  * Description: Display Online Scout Manager programmes, events, patrol names and waiting lists, using shortcodes and Gutenberg blocks with multiple-section support.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Alan Tiller
  * Author URI: https://www.alantiller.com
  * Text Domain: online-scout-manager
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 // Define constants
 define( 'OSM_PLUGIN_FILE', __FILE__ );
-define( 'OSM_PLUGIN_VERSION', '1.1.0' );
+define( 'OSM_PLUGIN_VERSION', '1.1.1' );
 define( 'OSM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'OSM_PLUGIN_URI', plugin_dir_url( __FILE__ ) );
 define( 'OSM_TEMPLATES_DIR', OSM_PLUGIN_DIR . 'templates' );
@@ -76,10 +76,11 @@ class OSM_For_WordPress {
      * @return void
      */
     public function enqueue_admin_assets( string $hook_suffix = '' ): void {
-        if ( 'toplevel_page_online-scout-manager' !== $hook_suffix ) {
+        if ( 'settings_page_online-scout-manager' !== $hook_suffix ) {
             return;
         }
         wp_enqueue_style( 'osm-admin-style', OSM_ASSETS_URI . '/css/admin.css', [], (string) filemtime( OSM_PLUGIN_DIR . 'assets/css/admin.css' ) );
+        wp_enqueue_style( 'osm-frontend-style', OSM_ASSETS_URI . '/css/frontend.css', [], (string) filemtime( OSM_PLUGIN_DIR . 'assets/css/frontend.css' ) );
         wp_enqueue_script( 'osm-admin-script', OSM_ASSETS_URI . '/js/admin.js', [], (string) filemtime( OSM_PLUGIN_DIR . 'assets/js/admin.js' ), true );
     }
 }

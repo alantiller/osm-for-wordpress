@@ -9,7 +9,7 @@ define( 'OSM_PLUGIN_DIR', dirname( __DIR__ ) . '/src/' );
 define( 'OSM_PLUGIN_URI', 'https://example.test/wp-content/plugins/online-scout-manager/' );
 define( 'OSM_ASSETS_URI', OSM_PLUGIN_URI . 'assets' );
 define( 'OSM_TEMPLATES_DIR', OSM_PLUGIN_DIR . 'templates' );
-define( 'OSM_PLUGIN_VERSION', '1.1.0' );
+define( 'OSM_PLUGIN_VERSION', '1.1.1' );
 $options = [];
 $requests = [];
 $hooks = [];
@@ -25,6 +25,9 @@ $fixtures = [
 function add_shortcode( $tag, $callback ) { $GLOBALS['hooks'][ $tag ] = $callback; }
 function add_action( $tag, $callback, ...$args ) { $GLOBALS['hooks'][ $tag ][] = $callback; $GLOBALS['hook_arguments'][ $tag ][] = $args; }
 function add_filter( $tag, $callback, ...$args ) { add_action( $tag, $callback ); }
+/** Apply synthetic WordPress filters without any external callbacks. */
+function apply_filters( $tag, $value, ...$args ) { foreach ( $GLOBALS['hooks'][ $tag ] ?? [] as $callback ) { $value = $callback( $value, ...$args ); } return $value; }
+
 function get_option( $key, $default = false ) { return $GLOBALS['options'][ $key ] ?? $default; }
 function update_option( $key, $value, ...$args ) { $GLOBALS['options'][ $key ] = $value; return true; }
 function delete_option( $key ) { unset( $GLOBALS['options'][ $key ] ); return true; }
@@ -77,7 +80,7 @@ function wp_remote_request( $url, $args ) {
         $data = $GLOBALS['fixtures'];
     } elseif ( 'getTerms' === ( $query['action'] ?? '' ) ) {
         $data = [];
-        foreach ( [ 123, 456, 789 ] as $section ) { $data[ $section ] = [ [ 'termid' => $section + 1000, 'startdate' => '2000-01-01', 'enddate' => '2099-12-31' ] ]; }
+        foreach ( array_column( $GLOBALS['fixtures'], 'sectionid' ) as $section ) { $data[ $section ] = [ [ 'termid' => $section + 1000, 'startdate' => '2000-01-01', 'enddate' => '2099-12-31' ] ]; }
     } elseif ( 'getProgramme' === ( $query['action'] ?? '' ) ) {
         $data = [ 'items' => [
             [ 'meetingdate' => '2026-10-08', 'title' => 'Meeting ' . $id, 'notesforparents' => '<script>alert(1)</script>' ],
@@ -91,7 +94,7 @@ function wp_remote_request( $url, $args ) {
             [ 'startdate' => 'broken', 'name' => 'No date' ],
         ] ];
     } elseif ( 'getPatrolsWithPeople' === ( $query['action'] ?? '' ) ) {
-        $data = [ 12001 => [ 'patrolid' => 12001, 'name' => 'Eagles', 'members' => [ [ 'scoutid' => 1001, 'firstname' => 'Private Child', 'lastname' => 'Fixture', 'email' => 'private@example.test' ] ] ], 12002 => [ 'patrolid' => 12002, 'name' => '<b>Owls</b>', 'members' => [] ], -2 => [ 'patrolid' => -2, 'name' => 'Leaders', 'members' => [ [ 'firstname' => 'Private Leader' ] ] ] ];
+        $data = [ 12001 => [ 'patrolid' => 12001, 'name' => 'Eagles', 'points' => '12', 'members' => [ [ 'scoutid' => 1001, 'firstname' => 'Private Child', 'lastname' => 'Fixture', 'email' => 'private@example.test' ] ] ], 12002 => [ 'patrolid' => 12002, 'name' => '<b>Owls</b>', 'points' => '0', 'members' => [] ], -2 => [ 'patrolid' => -2, 'name' => 'Leaders', 'members' => [ [ 'firstname' => 'Private Leader' ] ] ] ];
     } else {
         throw new RuntimeException( 'Unexpected mock request: ' . $url );
     }
@@ -144,16 +147,26 @@ $html = $renderer->render_events( [ 'sectionid' => '123', 'futureonly' => 'true'
 expect( str_contains( $html, 'Tonight' ) && str_contains( $html, '08 Oct 2026' ) && str_contains( $html, '19:00' ), 'UK OSM dates and times parsed correctly' );
 expect( ! str_contains( $html, 'Yesterday' ) && ! str_contains( $html, 'No date' ), 'future event filter handles UK and ISO dates' );
 $count = count( $requests );
-$renderer->render_programme( [ 'sectionids' => '123,789' ] );
+$mixed_html = $renderer->render_programme( [ 'sectionids' => '123,789' ] );
+expect( str_contains( $mixed_html, 'Meeting 123' ) && ! str_contains( $mixed_html, 'Private section' ), 'disabled section does not suppress enabled feeds or reveal disabled names' );
 expect( $count === count( $requests ), 'disabled selection rejected before API requests' );
 $renderer->render_patrols( [ 'sectionid' => 123 ] );
 expect( $count === count( $requests ), 'patrol publication disabled by default' );
 $options['osm_public_patrol_sections'] = [ 123 => 1 ];
 $patrols = OSM_API::get_patrols( 123 );
-expect( [ [ 'name' => 'Eagles' ], [ 'name' => 'Owls' ] ] === $patrols, 'patrol API returns sanitized names only' );
+expect( [ [ 'name' => 'Eagles', 'points' => '12' ], [ 'name' => 'Owls', 'points' => '0' ] ] === $patrols, 'patrol API returns sanitized names and current points' );
 $html = $renderer->render_patrols( [ 'sectionid' => 123 ] );
 expect( str_contains( $html, 'Eagles' ) && ! str_contains( $html, 'Private Child' ) && ! str_contains( $html, 'private@example.test' ), 'member details excluded from output' );
 expect( ! str_contains( $html, '<b>Owls</b>' ), 'patrol names escaped' );
+expect( str_contains( $html, '12 points' ) && str_contains( $html, '0 points' ) && str_contains( $html, 'osm-patrol-heading' ), 'patrol cards display real scores including zero beside their names' );
+foreach ( [ [ '-3', '-3' ], [ '2.5', '2.5' ], [ null, null ], [ '<script>99</script>', null ], [ [], null ] ] as [ $fixture_points, $expected_points ] ) {
+    $request_responder = static function ( $url, $args ) use ( $fixture_points ) {
+        return [ 'body' => json_encode( [ 12001 => [ 'patrolid' => 12001, 'name' => 'Eagles', 'points' => $fixture_points, 'members' => [] ] ] ), 'response' => [ 'code' => 200 ], 'headers' => [] ];
+    };
+    expect( $expected_points === OSM_API::get_patrols( 123 )[0]['points'], 'malformed scores are withheld while real negative/decimal totals remain accurate' );
+    if ( null === $expected_points ) { expect( str_contains( $renderer->render_patrols( [ 'sectionid' => 123 ] ), 'Points unavailable' ), 'absent or malformed points never become an invented zero' ); }
+}
+unset( $request_responder );
 foreach ( [
     [ 'full', 'full', 'Private Child Fixture' ], [ 'full', 'hidden', 'Private Child' ],
     [ 'hidden', 'full', 'Fixture' ], [ 'initial', 'initial', 'P. F.' ],
@@ -174,7 +187,7 @@ expect( 'Private Child F.' === OSM_API::get_patrols( 456 )[0]['members'][0], 'se
 OSM_Options::set_section_points( 123, 'full', 'full', [ 1001 ] );
 expect( ! isset( OSM_API::get_patrols( 123 )[0]['members'] ), 'excluded member omitted before public API output' );
 $request_responder = static function ( $url, $args ) {
-    return [ 'body' => json_encode( [ [ 'patrolid' => 12001, 'name' => 'Eagles', 'members' => [ [ 'firstname' => 'Unidentified', 'lastname' => 'Member' ], [ 'scoutid' => 1001, 'firstname' => 'Excluded', 'lastname' => 'Member' ] ] ] ] ), 'response' => [ 'code' => 200 ], 'headers' => [] ];
+    return [ 'body' => json_encode( [ [ 'patrolid' => 12001, 'name' => 'Eagles', 'points' => '12', 'members' => [ [ 'firstname' => 'Unidentified', 'lastname' => 'Member' ], [ 'scoutid' => 1001, 'firstname' => 'Excluded', 'lastname' => 'Member' ] ] ] ] ), 'response' => [ 'code' => 200 ], 'headers' => [] ];
 };
 expect( ! isset( OSM_API::get_patrols( 123 )[0]['members'] ), 'missing member IDs cannot bypass configured exclusions' );
 unset( $request_responder );
@@ -255,4 +268,58 @@ $buffer_level = ob_get_level();
 OSM_Cache::set( 'programme_123_1123', [ 'items' => [ [ 'meetingdate' => [], 'title' => [ 'unexpected' ], 'notesforparents' => [] ] ] ] );
 $html = $renderer->render_programme( [ 'sectionid' => '123' ] );
 expect( $buffer_level === ob_get_level() && str_contains( $html, '</table>' ), 'malformed cached text/date fields render without leaking output buffers' );
+// Exercise the reported legacy comma-separated attribute with distinct section terms.
+$original_fixtures = $fixtures;
+$original_enabled = $options['osm_enabled_sections'];
+$fixtures[] = [ 'sectionid' => 14648, 'groupname' => 'Example group', 'sectionname' => 'First section', 'section' => 'scouts' ];
+$fixtures[] = [ 'sectionid' => 6569, 'groupname' => 'Example group', 'sectionname' => 'Second section', 'section' => 'cubs' ];
+$options['osm_enabled_sections'] = [ 14648 => 1, 6569 => 1 ];
+OSM_Cache::delete( 'osm_sections' );
+foreach ( [ 'table', 'tiles', 'grid', 'vertical' ] as $layout ) {
+    $html = $renderer->render_programme( [ 'sectionid' => '14648,6569', 'futureonly' => 'true', 'layout' => $layout ] );
+    expect( str_contains( $html, 'Meeting 14648' ) && str_contains( $html, 'Meeting 6569' ), 'reported legacy selection renders both sections in ' . $layout );
+    expect( ! str_contains( $html, 'Past meeting' ) && ! str_contains( $html, '<script>' ), 'both layouts apply date and escaping policies' );
+    $html = $renderer->render_events( [ 'sectionid' => '14648,6569', 'futureonly' => 'true', 'layout' => $layout ] );
+    expect( substr_count( $html, 'Tonight' ) === 2 && ! str_contains( $html, 'Yesterday' ), 'events render and filter both selected sections in ' . $layout );
+}
+foreach ( [ 'programme', 'events' ] as $kind ) {
+    $method = 'render_' . $kind;
+    foreach ( [ 'tiles' => 'grid', 'grid' => 'grid', 'vertical' => 'vertical' ] as $requested => $expected ) {
+        $html = $renderer->$method( [ 'sectionid' => '14648', 'layout' => $requested, 'combine' => true ] );
+        expect( str_contains( $html, 'osm-activity-tiles--' . $expected ) && ! str_contains( $html, '<table' ), 'explicit and legacy tile layouts render cards rather than tables, even with combine enabled' );
+    }
+}
+foreach ( [ 14648, 6569 ] as $section_id ) {
+    $matching_requests = array_filter( $requests, static fn( $request ) => str_contains( $request['url'], 'sectionid=' . $section_id . '&termid=' . ( $section_id + 1000 ) ) );
+    expect( count( $matching_requests ) === 2, 'programme and events use the selected section own term' );
+}
+foreach ( [ 'programme' => 3, 'events' => 4 ] as $kind => $columns ) {
+    $method = 'render_' . $kind;
+    $combined = $renderer->$method( [ 'sectionid' => '14648,6569', 'futureonly' => true, 'combine' => 'true' ] );
+    expect( substr_count( $combined, '<table' ) === 1 && substr_count( $combined, 'scope="rowgroup" colspan="' . $columns . '"' ) === 2, 'combined ' . $kind . ' shares column headings and labels each section' );
+    expect( str_contains( $combined, 'First section' ) && str_contains( $combined, 'Second section' ), 'combined tables retain section identities' );
+    expect( ! str_contains( $combined, '<script>' ) && ! str_contains( $combined, 'Yesterday' ) && ! str_contains( $combined, 'Past meeting' ), 'combined tables preserve escaping and future filtering' );
+    $tiles = $renderer->$method( [ 'sectionid' => '14648,6569', 'combine' => true, 'layout' => 'tiles' ] );
+    expect( ! str_contains( $tiles, '<table' ) && str_contains( $tiles, 'osm-activity-tiles' ), 'combine does not override tile layouts' );
+}
+$combined = $renderer->render_programme( [ 'sectionid' => '14648,789', 'combine' => true ] );
+expect( str_contains( $combined, 'Meeting 14648' ) && str_contains( $combined, 'currently unavailable' ) && ! str_contains( $combined, 'Private section' ), 'combined table preserves successful feeds without disclosing disabled names' );
+OSM_Cache::set( 'programme_6569_7569', [ 'items' => [ [ 'meetingdate' => '2026-10-07', 'title' => 'Past-only second section' ] ] ] );
+$html = $renderer->render_programme( [ 'sectionid' => '14648,6569', 'futureonly' => 'true' ] );
+expect( str_contains( $renderer->render_programme( [ 'sectionid' => '14648,6569', 'futureonly' => true, 'combine' => true ] ), 'No upcoming activities' ), 'combined table includes empty-section messages' );
+expect( str_contains( $html, 'Meeting 14648' ) && str_contains( $html, 'No upcoming activities' ), 'past-only second section does not hide the first upcoming programme' );
+expect( str_contains( $renderer->render_programme( [ 'sectionid' => '14648,6569', 'futureonly' => 'false' ] ), 'Past-only second section' ), 'disabling the future filter reveals past activities in the same selection' );
+add_filter( 'osm_display_layout', static fn( $layout, $type, $atts ) => 'tiles' );
+expect( str_contains( $renderer->render_programme( [ 'sectionid' => '14648' ] ), 'osm-activity-tiles' ), 'theme filter can select tiles by default' );
+expect( str_contains( $renderer->render_programme( [ 'sectionid' => '14648', 'layout' => 'table' ] ), '<table' ), 'explicit layout overrides the theme default' );
+expect( ! str_contains( $renderer->render_programme( [ 'sectionid' => '14648', 'layout' => '../events' ] ), '<table' ), 'invalid layouts cannot select arbitrary templates' );
+unset( $hooks['osm_display_layout'] );
+OSM_Cache::delete( 'current_term_6569' );
+$fixtures = array_filter( $fixtures, static fn( $section ) => $section['sectionid'] !== 6569 );
+$html = $renderer->render_programme( [ 'sectionid' => '14648,6569' ] );
+expect( str_contains( $html, 'Meeting 14648' ) && str_contains( $html, 'No current OSM term' ), 'a missing term is explained without hiding a successful section' );
+$fixtures = $original_fixtures;
+$options['osm_enabled_sections'] = $original_enabled;
+OSM_Cache::delete( 'osm_sections' );
+OSM_API::get_sections();
 echo "Passed {$passed} regression checks.\n";

@@ -1,12 +1,16 @@
-/* Native WordPress tiles with explicit spacing and responsive columns. */
-.osm-admin { --osm-gap: 24px; }
-.osm-admin .nav-tab-wrapper { margin: 20px 0 0; }
-.osm-admin .osm-settings-columns { display: grid; grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr); gap: var(--osm-gap); margin-top: var(--osm-gap); align-items: start; }
-.osm-admin .osm-settings-columns--configuration, .osm-admin .osm-settings-columns--authentication { grid-template-columns: minmax(0, 1fr); max-width: 1120px; }
-.osm-admin .osm-settings-columns--authentication { max-width: 800px; }
+/* Native WordPress controls in a quiet, row-based settings layout. */
+.osm-admin { --osm-gap: 24px; --osm-admin-border: #aeb4bd; --osm-admin-divider: #c3c4c7; }
+.osm-admin .osm-admin-layout { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 40px; margin-top: 24px; padding: 28px; background: #fff; border: 1px solid var(--osm-admin-border); border-radius: 8px; align-items: start; }
 .osm-admin .osm-settings-column { display: grid; gap: var(--osm-gap); min-width: 0; }
-.osm-admin .osm-settings-tile { margin: 0; padding: 20px; min-width: 0; box-sizing: border-box; }
-.osm-admin .osm-settings-tile h2 { margin: 0 0 16px; font-size: 16px; line-height: 1.4; }
+.osm-admin .osm-settings-nav { position: sticky; top: 52px; background: transparent; border: 0; }
+.osm-admin .osm-settings-nav a { display: flex; align-items: center; gap: 12px; padding: 14px 12px; margin-bottom: 6px; border: 0; border-radius: 6px; text-decoration: none; color: #50575e; font-size: 14px; font-weight: 500; line-height: 1.4; }
+.osm-admin .osm-settings-nav a:last-child { border-bottom: 0; }
+.osm-admin .osm-settings-nav a:hover { background: #f6f7f7; }
+.osm-admin .osm-settings-nav a[aria-current="page"] { background: #f6f7f9; color: #7413dc; font-weight: 600; }
+.osm-admin .osm-settings-nav a:focus-visible { outline: 2px solid #2271b1; outline-offset: -3px; }
+.osm-admin .osm-overview-columns { display: grid; grid-template-columns: minmax(0, 2fr) minmax(250px, 1fr); gap: var(--osm-gap); align-items: start; }
+.osm-admin .osm-settings-tile { margin: 0; padding: 0 0 28px; min-width: 0; box-sizing: border-box; border: 0; border-bottom: 1px solid var(--osm-admin-divider); box-shadow: none; background: transparent; }
+.osm-admin .osm-settings-tile h2 { margin: 0 0 16px; font-size: 18px; line-height: 1.4; }
 .osm-admin .osm-settings-tile h3 { margin: 24px 0 12px; line-height: 1.4; }
 .osm-admin .osm-settings-tile h3:first-child { margin-top: 0; }
 .osm-admin .osm-settings-tile h4 { margin: 24px 0 12px; }
@@ -15,28 +19,60 @@
 .osm-admin .osm-settings-tile form { margin: 0; }
 .osm-admin .osm-settings-tile .submit { margin: 20px 0 0; padding: 0; }
 .osm-admin .osm-settings-tile .description { margin: 12px 0 0; }
-.osm-admin .osm-section-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
-.osm-admin .osm-section-tile { background: #f6f7f7; padding: 16px; }
 .osm-admin .osm-section-meta { color: #50575e; }
 .osm-admin .osm-settings-tile label:not(:has(input[type="checkbox"])) { display: block; margin-bottom: 6px; }
-.osm-admin .osm-section-rows { table-layout: fixed; }
-.osm-admin .osm-section-rows th { width: 68%; font-weight: 400; }
-.osm-admin .osm-section-rows td { vertical-align: middle; }
-.osm-admin .osm-section-rows label { margin: 0 !important; }
+/* Each section is one full-width bordered row, with aligned table columns. */
+.osm-admin .osm-section-list { margin-top: 16px; overflow-x: auto; }
+.osm-admin .osm-section-list:focus-visible { outline: 2px solid #7413dc; outline-offset: 2px; }
+.osm-admin .osm-section-table { width: 100%; min-width: 680px; border-collapse: separate; border-spacing: 0 8px; table-layout: fixed; }
+.osm-admin .osm-section-table th, .osm-admin .osm-section-table td { padding: 12px 16px; text-align: left; vertical-align: middle; }
+.osm-admin .osm-section-table thead th { padding-top: 0; padding-bottom: 4px; font-weight: 600; }
+.osm-admin .osm-section-table th:first-child { width: 30%; }
+.osm-admin .osm-section-table tbody th, .osm-admin .osm-section-table tbody td { border-top: 1px solid var(--osm-admin-border); border-bottom: 1px solid var(--osm-admin-border); background: #fff; font-weight: 400; }
+.osm-admin .osm-section-table tbody th:first-child { border-left: 1px solid var(--osm-admin-border); border-radius: 6px 0 0 6px; background: #f6f7f7; }
+.osm-admin .osm-section-table tbody td:last-child { border-right: 1px solid var(--osm-admin-border); border-radius: 0 6px 6px 0; }
+.osm-admin .osm-section-table .osm-section-meta { display: block; margin-top: 4px; font-size: 12px; line-height: 1.5; }
+.osm-admin .osm-section-table input[type="checkbox"] { margin: 0; }
+.osm-admin .osm-section-table code { background: transparent; padding: 0; }
+.osm-admin .osm-section-table td > label { margin: 0; }
 .osm-admin .osm-settings-tile input, .osm-admin .osm-settings-tile select, .osm-admin .osm-settings-tile textarea { max-width: 100%; box-sizing: border-box; }
 .osm-admin .osm-wide-control { width: 100%; }
 .osm-admin .osm-member-table { table-layout: fixed; }
 .osm-admin th, .osm-admin td, .osm-admin li, .osm-admin code, .osm-admin h3 { overflow-wrap: anywhere; }
-.osm-admin #osm-section-points > .osm-section-tile { margin-top: 20px; }
-.osm-admin .osm-preview-table { margin-top: 20px; }
-.osm-admin .osm-preview-table th { width: 90px; }
-.osm-admin .osm-points-preview ul { margin: 0; padding-left: 20px; list-style: disc; }
-.osm-admin .osm-points-preview li { margin: 4px 0; }
-.osm-admin .osm-settings-links { margin: 0; }
-.osm-admin .osm-settings-links li { margin-bottom: 20px; }
-.osm-admin .osm-settings-links li:last-child { margin-bottom: 0; }
+.osm-admin .osm-settings-nav .dashicons { flex: 0 0 20px; color: #9aa2af; }
+.osm-admin .osm-settings-nav [aria-current="page"] .dashicons { color: inherit; }
+.osm-admin #osm-admin-content > .osm-settings-tile:last-child { border-bottom: 0; padding-bottom: 0; }
+.osm-admin .osm-settings-tile > .description, .osm-admin .osm-settings-tile > p { color: #646970; line-height: 1.6; }
+.osm-admin .osm-settings-tile form > p:has(> label + input), .osm-admin .osm-settings-tile form > p:has(> label + select) { display: grid; grid-template-columns: minmax(120px, 180px) minmax(0, 1fr); gap: 24px; align-items: center; padding: 20px 0; margin: 0; border-bottom: 1px solid var(--osm-admin-divider); }
+.osm-admin .osm-settings-tile form > p > label { margin: 0; color: #1d2327; }
+.osm-admin #osm-notifications fieldset p { padding: 14px 0; border-bottom: 1px solid var(--osm-admin-divider); margin: 0; }
+.osm-admin .button-primary { background: #7413dc; border-color: #7413dc; box-shadow: none; }
+.osm-admin .button-primary:hover { background: #5d0fb0; border-color: #5d0fb0; }
+.osm-admin .osm-overview-summary { margin: 24px 0; }
+.osm-admin .osm-overview-summary > div { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(0, 1fr); gap: 20px; padding: 16px 0; border-top: 1px solid var(--osm-admin-divider); }
+.osm-admin .osm-overview-summary dt { font-weight: 500; }
+.osm-admin .osm-overview-summary dd { margin: 0; color: #50575e; }
 .osm-admin [hidden] { display: none !important; }
-@media (max-width: 1400px) { .osm-admin .osm-settings-columns { grid-template-columns: minmax(0, 3fr) minmax(250px, 1fr); } .osm-admin .osm-settings-columns--configuration, .osm-admin .osm-settings-columns--authentication { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 1279px) { .osm-admin .osm-section-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 1100px) { .osm-admin .osm-settings-columns { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 600px) { .osm-admin { --osm-gap: 20px; } .osm-admin .osm-settings-tile { padding: 16px; } .osm-admin .osm-section-tiles { grid-template-columns: minmax(0, 1fr); } .osm-admin .osm-preview-table th { width: 65px; } }
+@media (max-width: 1100px) { .osm-admin .osm-overview-columns { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 782px) { .osm-admin .osm-admin-layout { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 20px; } .osm-admin .osm-settings-nav { position: static; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .osm-admin { --osm-gap: 20px; } .osm-admin .osm-admin-layout { padding: 16px; } .osm-admin .osm-settings-tile form > p:has(> label + input), .osm-admin .osm-settings-tile form > p:has(> label + select) { grid-template-columns: minmax(0, 1fr); gap: 8px; } }
+
+/* Full-width Section Points rows keep format controls and member previews together. */
+.osm-admin .osm-points-section { margin-top: 16px; border: 1px solid var(--osm-admin-border); border-radius: 6px; overflow: hidden; }
+.osm-admin .osm-points-settings { display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 24px; padding: 12px 16px; align-items: center; background: #f6f7f7; border-bottom: 1px solid var(--osm-admin-border); }
+.osm-admin .osm-points-settings h3 { margin: 0 0 4px; font-size: 14px; }
+.osm-admin .osm-points-settings .osm-section-meta { font-size: 12px; }
+.osm-admin .osm-points-settings select { width: 100%; }
+.osm-admin .osm-points-body { padding: 0 16px 16px; }
+.osm-admin .osm-member-list { margin-top: 16px; overflow-x: auto; }
+.osm-admin .osm-member-list:focus-visible { outline: 2px solid #7413dc; outline-offset: 2px; }
+.osm-admin .osm-member-table { width: 100%; min-width: 520px; border-color: var(--osm-admin-border); border-collapse: collapse; box-shadow: none; }
+.osm-admin .osm-member-table th, .osm-admin .osm-member-table td { padding: 12px 16px; border-bottom: 1px solid var(--osm-admin-divider); vertical-align: middle; }
+.osm-admin .osm-member-table th:first-child { width: 32%; }
+.osm-admin .osm-member-table th:nth-child(2) { width: 16%; }
+.osm-admin .osm-member-table th:last-child { width: 12%; }
+.osm-admin .osm-member-table tbody tr:last-child > * { border-bottom: 0; }
+.osm-admin .osm-member-table label { margin: 0; }
+.osm-admin .osm-member-table input[type="checkbox"] { margin: 0; }
+.osm-admin .osm-points-preview[data-state="hidden"] { color: #646970; font-style: italic; }
+@media (max-width: 600px) { .osm-admin .osm-points-settings { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; } .osm-admin .osm-points-settings > :first-child { grid-column: 1 / -1; } }

@@ -1,6 +1,6 @@
 {
     "name": "online-scout-manager",
-    "version": "1.1.0",
+    "version": "1.1.1",
     "scripts": {
         "build": "node scripts/build.mjs",
         "start": "node scripts/build.mjs --watch",

@@ -19,6 +19,20 @@
         "futureonly": {
             "type": "boolean",
             "default": false
+        },
+        "layout": {
+            "type": "string",
+            "enum": [
+                "table",
+                "grid",
+                "vertical",
+                "tiles"
+            ],
+            "default": "table"
+        },
+        "combine": {
+            "type": "boolean",
+            "default": false
         }
     },
     "supports": {

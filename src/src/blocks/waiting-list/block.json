@@ -5,7 +5,7 @@
     "title": "OSM Waiting List",
     "category": "widgets",
     "icon": "forms",
-    "description": "Show the waiting-list application form selected in OSM Settings, with optional section overrides.",
+    "description": "Show the application form using the destination selected on the Waiting List settings page.",
     "textdomain": "online-scout-manager",
     "attributes": {
         "sectionid": {

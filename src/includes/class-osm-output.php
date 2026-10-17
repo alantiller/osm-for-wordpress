@@ -20,6 +20,7 @@ class OSM_Output {
                 'rows' => true, 'selected' => true, 'placeholder' => true,
             ] );
         }
+        $allowed['div'] = array_merge( $allowed['div'] ?? [], $attributes, [ 'tabindex' => true ] );
         return $allowed;
     }
 }

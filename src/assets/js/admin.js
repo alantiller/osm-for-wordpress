@@ -18,43 +18,20 @@
     /**
      * Render this section's unsaved name formats and exclusions using safe text nodes.
      * @param {HTMLFormElement} form Section Points settings form with request-local roster rows.
-     * @returns {void} Replaces only its preview; never changes saved/public configuration.
+     * @returns {void} Updates each member row preview; never changes saved/public configuration.
      */
     function update_preview(form) {
-        const preview = form.querySelector('.osm-points-preview');
         const first_mode = form.querySelector('[name="osm_firstname_display"]').value;
         const last_mode = form.querySelector('[name="osm_lastname_display"]').value;
         const other_ids = new Set(form.querySelector('[name="osm_other_excluded_members"]').value.split(/[\s,]+/).filter(Boolean).map(id => id.replace(/^0+/, '')));
-        const groups = new Map();
         form.querySelectorAll('[data-osm-member]').forEach(row => {
-            const group_name = row.dataset.patrol || 'Unassigned members';
-            if (!groups.has(group_name)) groups.set(group_name, []);
             const checkbox = row.querySelector('[name="osm_excluded_members[]"]');
-            if (checkbox.checked || other_ids.has(checkbox.value)) return;
+            const excluded = checkbox.checked || other_ids.has(checkbox.value);
             const label = [format_name(row.dataset.firstname, first_mode), format_name(row.dataset.lastname, last_mode)].filter(Boolean).join(' ');
-            if (label) groups.get(group_name).push(label);
+            const preview = row.querySelector('.osm-points-preview');
+            preview.textContent = excluded ? 'Excluded' : (label || 'Name hidden');
+            preview.dataset.state = excluded || !label ? 'hidden' : 'visible';
         });
-        preview.replaceChildren();
-        if (!groups.size) {
-            preview.textContent = 'No member preview is available until OSM returns a member list.';
-            return;
-        }
-        const list = document.createElement('ul');
-        groups.forEach((members, group_name) => {
-            const group_item = document.createElement('li');
-            group_item.textContent = group_name;
-            if (members.length) {
-                const member_list = document.createElement('ul');
-                members.forEach(name => {
-                    const member_item = document.createElement('li');
-                    member_item.textContent = name;
-                    member_list.append(member_item);
-                });
-                group_item.append(member_list);
-            }
-            list.append(group_item);
-        });
-        preview.append(list);
     }
 
     /**

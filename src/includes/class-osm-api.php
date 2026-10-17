@@ -8,6 +8,9 @@
  */
 class OSM_Waiting_List_Partial_Exception extends RuntimeException {}
 
+/** Distinguish a missing current section term from transport/authentication failures. */
+class OSM_Current_Term_Exception extends RuntimeException {}
+
 class OSM_API {
     private static $access_token = null;
     private static $token_scope = null;
@@ -103,7 +106,7 @@ class OSM_API {
         $client_secret = get_option( 'osm_client_secret' );
 
         if ( ! $client_id || ! $client_secret ) {
-            throw new Exception( 'Client ID or Secret not set in OSM Settings.' );
+            throw new Exception( 'Client ID or Secret not set in Settings → Online Scout Manager.' );
         }
 
         $response = self::make_request(
@@ -190,7 +193,8 @@ class OSM_API {
      * Find the current term in the WordPress timezone, caching no later than midnight.
      * @param int|string $sectionid Positive section ID, retained for public API compatibility.
      * @return int Positive OSM term ID.
-     * @throws Exception If the ID is invalid, OSM is unavailable or no current term exists.
+     * @throws OSM_Current_Term_Exception If OSM returned no current term for this section.
+     * @throws Exception If the ID is invalid or OSM is unavailable.
      */
     public static function get_current_term( $sectionid ) {
         $sectionid = self::validate_id( $sectionid );
@@ -233,7 +237,7 @@ class OSM_API {
             }
         }
 
-        throw new Exception( 'No current term is available for this section.' );
+        throw new OSM_Current_Term_Exception( 'No current term is available for this section.' );
     }
 
     /**
@@ -313,6 +317,17 @@ class OSM_API {
     }
 
     /**
+     * Accept a finite decimal patrol score without inventing a missing total.
+     * @param mixed $value Untrusted OSM points field.
+     * @return string|null Display-safe decimal score, or null when absent/malformed.
+     */
+    private static function public_points( mixed $value ): ?string {
+        if ( ! is_int( $value ) && ! is_float( $value ) && ! is_string( $value ) ) { return null; }
+        $value = (string) $value;
+        return strlen( $value ) <= 32 && preg_match( '/^-?[0-9]+(?:\.[0-9]+)?$/D', $value ) ? $value : null;
+    }
+
+    /**
      * Normalize an OSM member identifier for exclusion matching.
      * @param array<string,mixed> $member Untrusted OSM member record.
      * @return int Positive member ID, or zero when missing or malformed.
@@ -328,7 +343,7 @@ class OSM_API {
      * Publication need not be enabled. Access is checked before any remote request.
      * The roster is request-local; no member names or raw responses are cached.
      * @param int $section_id Accessible section ID to inspect.
-     * @return list<array{id:int,name:string,firstname:string,lastname:string,patrol:string}> Minimal active youth identities and patrol labels for administrator controls and preview, ordered by name.
+     * @return list<array{id:int,name:string,firstname:string,lastname:string,patrol:string,points:?string}> Minimal active youth identities and patrol labels for administrator controls and preview, ordered by name.
      * @throws RuntimeException If the caller lacks administrator capability or section access.
      * @throws Exception If term lookup, authentication or the OSM request fails.
      */
@@ -351,7 +366,7 @@ class OSM_API {
                 foreach ( [ 'firstname', 'lastname' ] as $field ) {
                     if ( is_string( $member[ $field ] ?? null ) ) { $parts[] = sanitize_text_field( $member[ $field ] ); }
                 }
-                $members[ $member_id ] = [ 'id' => $member_id, 'name' => trim( implode( ' ', $parts ) ), 'firstname' => is_string( $member['firstname'] ?? null ) ? sanitize_text_field( $member['firstname'] ) : '', 'lastname' => is_string( $member['lastname'] ?? null ) ? sanitize_text_field( $member['lastname'] ) : '', 'patrol' => is_string( $patrol['name'] ?? null ) ? sanitize_text_field( $patrol['name'] ) : '' ];
+                $members[ $member_id ] = [ 'id' => $member_id, 'name' => trim( implode( ' ', $parts ) ), 'firstname' => is_string( $member['firstname'] ?? null ) ? sanitize_text_field( $member['firstname'] ) : '', 'lastname' => is_string( $member['lastname'] ?? null ) ? sanitize_text_field( $member['lastname'] ) : '', 'patrol' => is_string( $patrol['name'] ?? null ) ? sanitize_text_field( $patrol['name'] ) : '', 'points' => self::public_points( $patrol['points'] ?? null ) ];
             }
         }
         // Stable names make the administrator's safety review easier.
@@ -367,7 +382,7 @@ class OSM_API {
      * Leaders, young leaders, inactive members, excluded IDs and pseudo-patrols are excluded.
      *
      * @param int|string $sectionid Positive section ID with Section Points publication enabled.
-     * @return list<array{name:string,members?:list<string>}> Public patrol names and optional approved member labels.
+     * @return list<array{name:string,points:?string,members?:list<string>}> Public patrol names and optional approved member labels.
      * @throws Exception If publication, term, authorisation or response validation fails.
      */
     public static function get_patrols( $sectionid ): array {
@@ -390,7 +405,7 @@ class OSM_API {
                 || ( isset( $patrol['active'] ) && in_array( $patrol['active'], [ false, 0, '0' ], true ) ) ) { continue; }
             $name = sanitize_text_field( $patrol['name'] );
             if ( '' === $name ) { continue; }
-            $item = [ 'name' => $name ];
+            $item = [ 'name' => $name, 'points' => self::public_points( $patrol['points'] ?? null ) ];
             foreach ( is_array( $patrol['members'] ?? null ) ? $patrol['members'] : [] as $member ) {
                 if ( ! is_array( $member ) || ( isset( $member['active'] ) && in_array( $member['active'], [ false, 0, '0' ], true ) )
                     || ( ! empty( $member['enddate'] ) && is_string( $member['enddate'] ) && $member['enddate'] < current_time( 'Y-m-d' ) ) ) { continue; }

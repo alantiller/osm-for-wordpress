@@ -40,6 +40,7 @@ $actions = [
     'save_advanced_options' => 'osm_advanced_options_nonce',
     'purge_cache' => 'osm_purge_nonce',
     'reset_configuration' => 'osm_reset_nonce',
+    'reset_auth' => 'osm_reset_auth_nonce',
 ];
 foreach ( $actions as $method => $nonce ) {
     $before = $options;
@@ -74,48 +75,60 @@ expect( 'keep' === $options['osmXcachedYunrelated'], 'cache purge preserves unre
 expect( str_contains( $wpdb->query, 'osm\\_cached\\_%' ) && str_starts_with( $wpdb->query, 'SELECT option_name' ), 'cache prefix escaped and option names selected for invalidation' );
 $options['osm_cached_expired'] = [ 'value' => 'secret', 'expires' => time() - 1 ];
 expect( false === OSM_Cache::get( 'expired' ) && ! array_key_exists( 'osm_cached_expired', $options ), 'expired cache removed instead of retained' );
-$options = [];
-$before = count( $requests );
-foreach ( [ 'general', 'shortcodes', 'sections', 'public_data', 'advanced_options', 'authentication' ] as $tab ) {
+/** Capture the standard WordPress Settings submenu registration. */
+function add_options_page( ...$args ) { $GLOBALS['settings_registration'] = $args; }
+$admin->add_admin_page();
+expect( 'Online Scout Manager' === $settings_registration[1] && 'online-scout-manager' === $settings_registration[3], 'plugin registers under WordPress Settings with its full name' );
+/**
+ * Render one allowlisted server-side settings page without leaking output buffers.
+ * @param OSM_Admin $admin Settings controller under the isolated capability fixture.
+ * @param string $tab Requested page, including legacy aliases or unavailable pages.
+ * @return string Captured administrator HTML.
+ */
+function render_admin_html( OSM_Admin $admin, string $tab ): string {
     $_GET['tab'] = $tab;
     ob_start();
-    $admin->render_admin_page();
-    $html = ob_get_clean();
-    expect( str_contains( $html, 'Online Scout Manager' ), 'unconfigured settings tab renders: ' . $tab );
-    expect( ! str_contains( $html, 'test-secret' ) && ! str_contains( $html, 'fake-token' ), 'settings do not expose credentials: ' . $tab );
+    try { $admin->render_admin_page(); return ob_get_contents(); }
+    finally { ob_end_clean(); }
 }
-expect( $before === count( $requests ), 'unconfigured settings never request OSM API data' );
+$options = [];
+$before = count( $requests );
+foreach ( [ 'overview', 'sections', 'section_points', 'waiting_list', 'notifications', 'advanced', 'authentication', 'documentation', 'general', 'configuration' ] as $tab ) {
+    $html = render_admin_html( $admin, $tab );
+    expect( str_contains( $html, 'id="osm-auth-title"' ) && substr_count( $html, 'aria-current="page"' ) === 1, 'unconfigured request shows Authentication only: ' . $tab );
+    expect( ! str_contains( $html, 'id="osm-sections-title"' ) && ! str_contains( $html, 'osm_reset_auth' ), 'unconfigured pages cannot expose other controls: ' . $tab );
+}
+expect( $before === count( $requests ), 'unconfigured settings never call OSM' );
+foreach ( explode( ' ', OSM_API::get_scopes() ) as $scope ) { expect( str_contains( $html, $scope ), 'authentication explains scope: ' . $scope ); }
+expect( str_contains( $html, 'I am a developer' ) && str_contains( $html, 'displayed once only' ), 'detailed authentication instructions retained' );
 $admin->add_privacy_policy_content();
-expect( str_contains( $privacy_text, 'without storing application fields in WordPress' ), 'WordPress privacy guide explains direct and hosted application flows' );
-$_GET['tab'] = 'public_data';
-ob_start(); $admin->render_admin_page(); $html = ob_get_clean();
-expect( str_contains( $html, 'id="osm-section-points"' ) && ! str_contains( $html, '>Public Data<' ), 'legacy Public Data route opens Section Points' );
+expect( str_contains( $privacy_text, 'without storing application fields in WordPress' ), 'privacy guide retains application handling description' );
 $options['osm_client_id'] = 'test-client';
 $options['osm_client_secret'] = 'test-secret';
 $options['osm_enabled_sections'] = [ 123 => 1 ];
 $options['osm_public_patrol_sections'] = [ 123 => 1 ];
 $options['osm_waiting_list_section_id'] = 789;
-$_GET['tab'] = 'general';
-ob_start(); $admin->render_admin_page(); $html = ob_get_clean();
-expect( str_contains( $html, 'id="osm-sections-title"' ) && str_contains( $html, 'id="osm-settings-title"' ), 'General shows sections in the first column and the settings tile in the second' );
-expect( str_contains( $html, 'osm-api-usage-title' ), 'General includes API usage before settings' );
-expect( ! str_contains( $html, 'osm_purge_cache' ) && ! str_contains( $html, 'id="osm-waiting-list"' ), 'General excludes purge and waiting-list configuration' );
-$_GET['tab'] = 'privacy_options';
-ob_start(); $admin->render_admin_page(); $html = ob_get_clean();
-expect( str_contains( $html, 'value="789" selected="selected"' ), 'waiting-list dropdown selects a section independently of feed publication' );
-expect( ! str_contains( $html, 'id="osm-shortcodes"' ), 'shortcode documentation stays on General following the user layout' );
-expect( str_contains( $html, 'osm_clear_waiting_list' ) && ! str_contains( $html, 'osm_waiting_list_connect' ), 'waiting-list tile offers clear without a separate connection' );
-expect( ! str_contains( $html, 'osm_patrol_scope' ) && ! str_contains( $html, 'osm_waiting_list_form_url' ) && ! str_contains( $html, 'osm_waiting_list_mode' ), 'API permission and hosted-URL controls are removed' );
-expect( str_contains( $html, 'osm-points-preview' ) && str_contains( $html, 'data-osm-member' ), 'section controls include a live preview backed by the administrator roster' );
-expect( str_contains( $html, 'osm_firstname_display' ) && str_contains( $html, 'osm_lastname_display' ) && str_contains( $html, 'Initial only' ), 'privacy tile offers independent first and last name limits' );
-expect( substr_count( $html, 'class="nav-tab ' ) === 3 && ! str_contains( $html, '>Shortcodes</a>' ), 'navigation contains only General, Configuration, Authentication' );
-$_GET['tab'] = 'authentication';
-ob_start(); $admin->render_admin_page(); $html = ob_get_clean();
-foreach ( explode( ' ', OSM_API::get_scopes() ) as $scope ) {
-    expect( str_contains( $html, $scope ), 'authentication explains the requested scope: ' . $scope );
-}
-expect( str_contains( $html, 'I am a developer' ) && str_contains( $html, 'displayed once only' ) && str_contains( $html, 'Client Credentials Grant' ), 'detailed original credential setup instructions restored' );
-expect( ! str_contains( $html, 'connected separately' ), 'instructions use a single connection' );
+$html = render_admin_html( $admin, 'overview' );
+foreach ( [ 'Overview', 'Sections', 'Section Points', 'Waiting List', 'Notifications', 'Advanced', 'Documentation' ] as $label ) { expect( str_contains( $html, '>' . $label . '</span>' ), 'authenticated navigation includes ' . $label ); }
+expect( ! str_contains( $html, '>Authentication</span>' ) && ! str_contains( $html, 'osm_save_auth' ), 'authenticated navigation hides credentials' );
+expect( str_contains( $html, 'osm-api-usage-title' ) && ! str_contains( $html, 'osm_save_sections' ), 'Overview contains usage and status rather than section controls' );
+expect( str_contains( render_admin_html( $admin, 'authentication' ), 'id="osm-overview-title"' ), 'direct Authentication request after connection returns to Overview' );
+$html = render_admin_html( $admin, 'sections' );
+expect( str_contains( $html, 'osm_save_sections' ) && str_contains( $html, 'Show Section Points' ) && ! str_contains( $html, 'osm_firstname_display' ), 'Sections page owns the independent display switches' );
+$html = render_admin_html( $admin, 'section_points' );
+expect( str_contains( $html, 'osm-points-preview' ) && str_contains( $html, 'osm_excluded_members' ) && ! str_contains( $html, 'osm_save_waiting_list' ), 'Section Points keeps preview/exclusions separate from Waiting List' );
+expect( str_contains( render_admin_html( $admin, 'public_data' ), 'id="osm-section-points"' ), 'legacy public-data alias opens Section Points after authentication' );
+$html = render_admin_html( $admin, 'waiting_list' );
+expect( str_contains( $html, 'value="789" selected="selected"' ) && str_contains( $html, 'osm_clear_waiting_list' ), 'Waiting List keeps its independent section selection and clear action' );
+$html = render_admin_html( $admin, 'advanced' );
+expect( str_contains( $html, 'osm_reset_auth' ) && str_contains( $html, 'osm_purge_cache' ) && str_contains( $html, 'osm_date_format' ), 'Advanced owns Reset Auth, maintenance and display formats' );
+expect( str_contains( render_admin_html( $admin, 'documentation' ), '[osm_programme' ), 'Documentation owns shortcode guidance' );
+OSM_API::clear_authorization();
+$http_failure = new WP_Error();
+$html = render_admin_html( $admin, 'advanced' );
+expect( str_contains( $html, 'id="osm-auth-title"' ) && ! str_contains( $html, 'osm_reset_auth' ), 'failed credential verification gates navigation back to Authentication' );
+$http_failure = null;
+OSM_API::clear_authorization();
 $stop_after_nonce = false;
 /** Intercept the handler redirect before its exit. */
 function wp_safe_redirect( $url ) { throw new RuntimeException( 'Redirect: ' . $url ); }
@@ -135,13 +148,13 @@ $_POST['osm_section_id'] = '99999';
 try { $admin->save_section_points(); } catch ( RuntimeException $error ) {}
 expect( $before_settings === $options['osm_section_points_settings'], 'inaccessible section cannot change policies' );
 $roster = OSM_API::get_section_members_for_admin(123);
-expect( [ [ 'id' => 1001, 'name' => 'Private Child Fixture', 'firstname' => 'Private Child', 'lastname' => 'Fixture', 'patrol' => 'Eagles' ] ] === $roster, 'administrator roster exposes only identity and patrol labels needed for exclusions and preview' );
+expect( [ [ 'id' => 1001, 'name' => 'Private Child Fixture', 'firstname' => 'Private Child', 'lastname' => 'Fixture', 'patrol' => 'Eagles', 'points' => '12' ] ] === $roster, 'administrator roster exposes only identity and patrol labels needed for exclusions and preview' );
 $admin_allowed = false;
 $before = count($requests);
 try { OSM_API::get_section_members_for_admin(123); expect(false,'unauthorised roster blocked'); }
 catch (RuntimeException $error) { expect($before === count($requests),'member listing requires administrator capability before HTTP'); }
 $admin_allowed = true;
-$_GET['tab'] = 'section_points_options';
+$_GET['tab'] = 'section_points';
 $http_failure = new WP_Error();
 ob_start(); $admin->render_admin_page(); $html = ob_get_clean();
 $http_failure = null;
@@ -159,8 +172,13 @@ try { $admin->save_notifications(); } catch ( RuntimeException $error ) {}
 expect( [] === OSM_Notifications::get_recipient_ids(), 'empty selection disables notifications' );
 $previous_options = $options;
 try { $admin->clear_waiting_list(); } catch ( RuntimeException $error ) {
-    expect( str_contains( $error->getMessage(), 'configuration#osm-waiting-list' ), 'clear returns to the waiting-list tile' );
+    expect( str_contains( $error->getMessage(), 'waiting_list#osm-waiting-list' ), 'clear returns to the waiting-list tile' );
 }
 unset( $previous_options['osm_waiting_list_section_id'] );
 expect( $previous_options === $options, 'clear removes only the selected section and preserves other settings' );
+$before_reset = $options;
+try { $admin->reset_auth(); } catch ( RuntimeException $error ) { expect( str_contains( $error->getMessage(), 'tab=authentication' ), 'Reset Auth returns to authentication' ); }
+expect( ! isset( $options['osm_client_id'], $options['osm_client_secret'] ), 'Reset Auth removes credentials' );
+expect( $before_reset['osm_section_points_settings'] === $options['osm_section_points_settings'], 'Reset Auth retains name formats and exclusions' );
+expect( str_contains( render_admin_html( $admin, 'sections' ), 'id="osm-auth-title"' ), 'Reset Auth immediately restores the authentication-only state' );
 echo "Passed {$passed} total checks including admin authorization and cache isolation.\n";

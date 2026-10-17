@@ -6,7 +6,7 @@
     const el = wp.element.createElement;
     const __ = wp.i18n.__;
     const { InspectorControls, useBlockProps } = wp.blockEditor;
-    const { PanelBody, TextControl, ToggleControl } = wp.components;
+    const { PanelBody, TextControl, ToggleControl, SelectControl } = wp.components;
 
     /**
      * Create a block-specific editor while keeping saved section aliases editable.
@@ -26,27 +26,43 @@
         return function Edit({ attributes, setAttributes: set_attributes }) {
                 const sections = attributes.sectionids || attributes.sectionid || '';
                 const has_future_filter = Object.prototype.hasOwnProperty.call(block.attributes, 'futureonly');
+                const display_layout = attributes.layout === 'tiles' ? 'grid' : (attributes.layout || 'table');
                 const waiting_list = block.name === 'osm/waiting-list';
                 const note = block.name === 'osm/patrols'
-                    ? __('Enable Show Section Points on General. Each section’s name formats and member exclusions are applied before displaying members.', 'online-scout-manager')
+                    ? __('Enable Show Section Points on Sections. Each section’s name formats and member exclusions are applied before displaying members.', 'online-scout-manager')
                     : waiting_list
-                        ? __('Shows the waiting-list application form configured in OSM Settings. Uses the waiting-list section selected there when no override is entered.', 'online-scout-manager')
+                        ? __('Shows the application form for the destination selected on the Waiting List settings page.', 'online-scout-manager')
                         : __('Current OSM data is displayed when visitors view the page.', 'online-scout-manager');
 
                 return el(wp.element.Fragment, null,
                     el(InspectorControls, null,
                         el(PanelBody, { title: block.title, initialOpen: true },
                             el(TextControl, {
-                                label: waiting_list ? __('Section IDs (optional override)', 'online-scout-manager') : __('Section IDs', 'online-scout-manager'),
+                                label: waiting_list ? __('Section ID (optional)', 'online-scout-manager') : __('Section IDs', 'online-scout-manager'),
                                 value: sections,
                                 placeholder: '123,456',
                                 help: waiting_list
-                                    ? __('Uses the waiting-list section selected in OSM Settings when empty. Enter section IDs separated by commas only to override that selection.', 'online-scout-manager')
-                                    : __('Enter one or more enabled section IDs, separated by commas. Manage available sections in OSM Settings.', 'online-scout-manager'),
+                                    ? __('Leave blank to use the saved waiting-list destination. Any supplied section ID must match that destination.', 'online-scout-manager')
+                                    : __('Enter one or more enabled section IDs, separated by commas. Manage available sections in Settings → Online Scout Manager.', 'online-scout-manager'),
                                 onChange: function (value) {
                                     // Clear the old alias so an empty selection stays empty.
                                     set_attributes({ sectionids: value, sectionid: '' });
                                 },
+                                __nextHasNoMarginBottom: true,
+                            }),
+                            has_future_filter && el(SelectControl, {
+                                label: __('Layout', 'online-scout-manager'),
+                                value: display_layout,
+                                options: [ { label: __('Table', 'online-scout-manager'), value: 'table' }, { label: __('Grid tiles', 'online-scout-manager'), value: 'grid' }, { label: __('Vertical tiles', 'online-scout-manager'), value: 'vertical' } ],
+                                onChange: function (value) { set_attributes({ layout: value }); },
+                                __nextHasNoMarginBottom: true,
+                            }),
+                            has_future_filter && el(ToggleControl, {
+                                label: __('Combine sections into one table', 'online-scout-manager'),
+                                checked: !!attributes.combine,
+                                disabled: display_layout !== 'table',
+                                help: __('Table layout only. Adds a labelled section row before each section’s entries.', 'online-scout-manager'),
+                                onChange: function (value) { set_attributes({ combine: value }); },
                                 __nextHasNoMarginBottom: true,
                             }),
                             has_future_filter && el(ToggleControl, {
@@ -59,8 +75,9 @@
                     ),
                     el('div', useBlockProps({ className: 'osm-block-editor' }),
                         el('strong', null, block.title),
-                        el('p', null, __('Section IDs:', 'online-scout-manager') + ' ' + (sections || (waiting_list ? __('Uses OSM Settings', 'online-scout-manager') : __('Not set', 'online-scout-manager')))),
+                        el('p', null, __('Section IDs:', 'online-scout-manager') + ' ' + (sections || (waiting_list ? __('Uses Settings → Online Scout Manager', 'online-scout-manager') : __('Not set', 'online-scout-manager')))),
                         has_future_filter && el('p', null, __('Future only:', 'online-scout-manager') + ' ' + (attributes.futureonly ? __('Yes', 'online-scout-manager') : __('No', 'online-scout-manager'))),
+                        has_future_filter && el('p', null, __('Layout:', 'online-scout-manager') + ' ' + (display_layout === 'vertical' ? __('Vertical tiles', 'online-scout-manager') : display_layout === 'grid' ? __('Grid tiles', 'online-scout-manager') : __('Table', 'online-scout-manager'))),
                         el('p', { className: 'osm-block-editor-note' }, note)
                     )
                 );

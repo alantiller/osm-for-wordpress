@@ -16,6 +16,7 @@ class OSM_Admin {
         add_action( 'admin_post_osm_save_privacy', [ $this, 'save_privacy' ], 10, 0 );
         add_action( 'admin_post_osm_save_public_data', [ $this, 'save_public_data' ] );
         add_action( 'admin_post_osm_purge_cache', [ $this, 'purge_cache' ] );
+        add_action( 'admin_post_osm_reset_auth', [ $this, 'reset_auth' ] );
         add_action( 'admin_post_osm_reset_configuration', [ $this, 'reset_configuration' ] );
         add_action( 'admin_post_osm_save_advanced_options', [ $this, 'save_advanced_options' ] );
         add_action( 'admin_notices', [ $this, 'display_admin_notices' ] );
@@ -24,7 +25,7 @@ class OSM_Admin {
 
     /** Register the administrator-only settings page. @return void */
     public function add_admin_page(): void {
-        add_menu_page( 'OSM Settings', 'OSM Settings', 'manage_options', 'online-scout-manager', [ $this, 'render_admin_page' ], 'dashicons-admin-tools' );
+        add_options_page( 'Online Scout Manager', 'Online Scout Manager', 'manage_options', 'online-scout-manager', [ $this, 'render_admin_page' ] );
     }
 
     /**
@@ -61,9 +62,9 @@ class OSM_Admin {
      * @param string $tab Known settings tab, optionally followed by a local fragment.
      * @return void This method terminates the request after redirecting.
      */
-    private function finish( string $type, string $message, string $tab = 'general' ): void {
+    private function finish( string $type, string $message, string $tab = 'overview' ): void {
         set_transient( 'osm_admin_notice', [ 'type' => $type, 'message' => $message ], 30 );
-        wp_safe_redirect( admin_url( 'admin.php?page=online-scout-manager&tab=' . $tab ) );
+        wp_safe_redirect( admin_url( 'options-general.php?page=online-scout-manager&tab=' . $tab ) );
         exit;
     }
 
@@ -79,20 +80,27 @@ class OSM_Admin {
     /**
      * Render native WordPress settings, loading section data only where it is useful.
      *
-     * Legacy settings bookmarks open the corresponding General or Configuration page. API failures
+     * Legacy tab names open the corresponding dedicated settings page. Only Authentication is available until credentials are verified. API failures
      * leave saved configuration intact and are shown as administrator notices.
      *
      * @return void Outputs the settings template without exposing saved credentials.
      */
     public function render_admin_page(): void {
         $this->require_admin();
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only tab navigation; values are allowlisted and never mutate settings.
-        $tab = isset( $_GET['tab'] ) && is_string( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'general';
-        $aliases = [ 'section_points_options' => 'configuration', 'patrol_points_options' => 'configuration', 'privacy_options' => 'configuration', 'public_data' => 'configuration', 'advanced_options' => 'configuration', 'shortcodes' => 'general', 'sections' => 'general' ];
-        $tab = $aliases[ $tab ] ?? $tab;
-        $active_tab = in_array( $tab, [ 'general', 'configuration', 'authentication' ], true ) ? $tab : 'general';
         $client_id = get_option( 'osm_client_id' );
         $client_secret = get_option( 'osm_client_secret' );
+        $is_authenticated = false;
+        $api_error = '';
+        if ( $client_id && $client_secret ) {
+            try { OSM_API::authorize(); $is_authenticated = true; }
+            catch ( Throwable $error ) { $api_error = 'Unable to authenticate with OSM. Check your credentials or try again later.'; }
+        }
+        $tabs = $is_authenticated ? [ 'overview' => 'Overview', 'sections' => 'Sections', 'section_points' => 'Section Points', 'waiting_list' => 'Waiting List', 'notifications' => 'Notifications', 'advanced' => 'Advanced', 'documentation' => 'Documentation' ] : [ 'authentication' => 'Authentication' ];
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only allowlisted page navigation, not a settings mutation.
+        $tab = isset( $_GET['tab'] ) && is_string( $_GET['tab'] ) ? sanitize_key( wp_unslash( $_GET['tab'] ) ) : 'overview';
+        $aliases = [ 'general' => 'overview', 'configuration' => 'advanced', 'section_points_options' => 'section_points', 'patrol_points_options' => 'section_points', 'privacy_options' => 'section_points', 'public_data' => 'section_points', 'advanced_options' => 'advanced', 'shortcodes' => 'documentation' ];
+        $tab = $aliases[ $tab ] ?? $tab;
+        $active_tab = isset( $tabs[ $tab ] ) ? $tab : ( $is_authenticated ? 'overview' : 'authentication' );
         $enabled_sections = array_filter( (array) get_option( 'osm_enabled_sections', [] ) );
         $public_patrol_sections = (array) get_option( 'osm_public_patrol_sections', [] );
         $waiting_list = $this->get_waiting_list_settings();
@@ -104,14 +112,13 @@ class OSM_Admin {
         ];
         $sections = [];
         $current_terms = [];
-        $api_error = '';
-        if ( $client_id && $client_secret && in_array( $active_tab, [ 'general', 'configuration' ], true ) ) {
+        if ( $is_authenticated && in_array( $active_tab, [ 'sections', 'section_points', 'waiting_list' ], true ) ) {
             try {
                 $sections = OSM_API::get_sections();
             } catch ( Throwable $error ) {
                 $api_error = $error->getMessage();
             }
-            if ( 'general' === $active_tab ) {
+            if ( 'sections' === $active_tab ) {
                 foreach ( $enabled_sections + array_filter( $public_patrol_sections ) as $section_id => $enabled ) {
                     try {
                         $current_terms[ $section_id ] = OSM_API::get_current_term( $section_id );
@@ -122,7 +129,7 @@ class OSM_Admin {
                 }
             }
         }
-        if ( 'configuration' === $active_tab ) {
+        if ( 'section_points' === $active_tab ) {
             foreach ( array_filter( $public_patrol_sections ) as $section_id => $enabled ) {
                 if ( ! isset( $sections[ $section_id ] ) ) { continue; }
                 try { $section_members[ $section_id ] = OSM_API::get_section_members_for_admin( (int) $section_id ); }
@@ -136,7 +143,7 @@ class OSM_Admin {
             $second_waiting = 'waitinglist' === preg_replace( '/[^a-z]/', '', strtolower( $second_section['section'] ) );
             return (int) $second_waiting <=> (int) $first_waiting;
         } );
-        $notification_users = 'configuration' === $active_tab ? get_users( [ 'fields' => [ 'ID', 'display_name', 'user_email' ], 'orderby' => 'display_name' ] ) : [];
+        $notification_users = 'notifications' === $active_tab ? get_users( [ 'fields' => [ 'ID', 'display_name', 'user_email' ], 'orderby' => 'display_name' ] ) : [];
         $notification_recipients = OSM_Notifications::get_recipient_ids();
         $notification_delivery = (array) get_option( 'osm_notification_last_delivery', [] );
         $api_usage = OSM_API::get_api_usage();
@@ -174,7 +181,6 @@ class OSM_Admin {
                     delete_option( $option );
                 }
             }
-            $this->finish( 'success', 'Authentication saved and verified. Enable the sections you want to publish.', 'authentication' );
         } catch ( Exception $error ) {
             if ( null !== $previous_usage ) { update_option( 'osm_api_usage', $previous_usage, false ); } else { delete_option( 'osm_api_usage' ); }
             OSM_Cache::clear_all();
@@ -183,6 +189,7 @@ class OSM_Admin {
             update_option( 'osm_client_secret', $previous_secret, false );
             $this->finish( 'error', 'Authentication failed. Previous credentials have been retained. ' . $error->getMessage(), 'authentication' );
         }
+        $this->finish( 'success', 'Authentication saved and verified. Choose the sections you want to publish.', 'overview' );
     }
 
     /**
@@ -190,7 +197,7 @@ class OSM_Admin {
      *
      * Only accessible section IDs are accepted. Name policies and exclusions remain
      * intact when a display is switched off. Waiting-list configuration is independent.
-     * @return void Redirects to General after capability and nonce verification.
+     * @return void Redirects to Sections after capability and nonce verification.
      */
     public function save_sections(): void {
         $this->require_admin();
@@ -207,9 +214,9 @@ class OSM_Admin {
             }
             foreach ( $choices as $option => $value ) { update_option( $option, $value, false ); }
         } catch ( Throwable $error ) {
-            $this->finish( 'error', 'Sections were not saved. Please check your OSM connection.', 'general' );
+            $this->finish( 'error', 'Sections were not saved. Please check your OSM connection.', 'sections' );
         }
-        $this->finish( 'success', 'Sections updated successfully.', 'general' );
+        $this->finish( 'success', 'Sections updated successfully.', 'sections' );
     }
 
     /**
@@ -230,9 +237,9 @@ class OSM_Admin {
             $retained = preg_split( '/[\s,]+/', $this->posted_text( 'osm_other_excluded_members' ), -1, PREG_SPLIT_NO_EMPTY );
             OSM_Options::set_section_points( $section_id, $this->posted_text( 'osm_firstname_display' ), $this->posted_text( 'osm_lastname_display' ), array_merge( $excluded, $retained ) );
         } catch ( Throwable $error ) {
-            $this->finish( 'error', 'Section Points settings were not saved. Check the section, name formats and member IDs.', 'configuration#osm-section-points' );
+            $this->finish( 'error', 'Section Points settings were not saved. Check the section, name formats and member IDs.', 'section_points#osm-section-points' );
         }
-        $this->finish( 'success', 'Section Points settings saved.', 'configuration#osm-section-points' );
+        $this->finish( 'success', 'Section Points settings saved.', 'section_points#osm-section-points' );
     }
 
     /**
@@ -240,22 +247,22 @@ class OSM_Admin {
      *
      * Empty selection disables mail. A malformed or unavailable account retains the old
      * configuration rather than partially saving. Only user IDs are persisted.
-     * @return void Redirects to Configuration after capability and nonce verification.
+     * @return void Redirects to the relevant settings page after capability and nonce verification.
      */
     public function save_notifications(): void {
         $this->require_admin();
         check_admin_referer( 'osm_notifications_nonce' );
         $submitted = isset( $_POST['osm_notification_user_ids'] ) ? map_deep( wp_unslash( $_POST['osm_notification_user_ids'] ), 'sanitize_text_field' ) : [];
         $ids = [];
-        if ( ! is_array( $submitted ) ) { $this->finish( 'error', 'Choose valid WordPress users.', 'configuration#osm-notifications' ); }
+        if ( ! is_array( $submitted ) ) { $this->finish( 'error', 'Choose valid WordPress users.', 'notifications#osm-notifications' ); }
         foreach ( $submitted as $value ) {
             $user_id = is_scalar( $value ) ? filter_var( $value, FILTER_VALIDATE_INT, [ 'options' => [ 'min_range' => 1 ] ] ) : false;
             $user = false !== $user_id ? get_userdata( $user_id ) : false;
-            if ( ! $user || ! is_email( $user->user_email ) ) { $this->finish( 'error', 'A selected user is unavailable or has no valid email. Your previous selection was kept.', 'configuration#osm-notifications' ); }
+            if ( ! $user || ! is_email( $user->user_email ) ) { $this->finish( 'error', 'A selected user is unavailable or has no valid email. Your previous selection was kept.', 'notifications#osm-notifications' ); }
             $ids[] = $user_id;
         }
         update_option( 'osm_notification_user_ids', array_values( array_unique( $ids ) ), false );
-        $this->finish( 'success', $ids ? 'Notification recipients saved.' : 'Notifications disabled.', 'configuration#osm-notifications' );
+        $this->finish( 'success', $ids ? 'Notification recipients saved.' : 'Notifications disabled.', 'notifications#osm-notifications' );
     }
 
     /**
@@ -267,18 +274,18 @@ class OSM_Admin {
         check_admin_referer( 'osm_waiting_list_nonce' );
         $submitted_id = isset( $_POST['osm_waiting_list_section_id'] ) && is_string( $_POST['osm_waiting_list_section_id'] ) ? sanitize_text_field( wp_unslash( $_POST['osm_waiting_list_section_id'] ) ) : '';
         if ( '' !== $submitted_id && false === filter_var( $submitted_id, FILTER_VALIDATE_INT, [ 'options' => [ 'min_range' => 1 ] ] ) ) {
-            $this->finish( 'error', 'Choose a valid waiting-list section.', 'configuration#osm-waiting-list' );
+            $this->finish( 'error', 'Choose a valid waiting-list section.', 'waiting_list#osm-waiting-list' );
         }
         $section_id = (int) $submitted_id;
         if ( $section_id > 0 ) {
             try { $sections = OSM_API::get_sections(); }
-            catch ( Throwable $error ) { $this->finish( 'error', 'Unable to check OSM section access. Your selection has been kept.', 'configuration#osm-waiting-list' ); }
+            catch ( Throwable $error ) { $this->finish( 'error', 'Unable to check OSM section access. Your selection has been kept.', 'waiting_list#osm-waiting-list' ); }
             if ( ! isset( $sections[ $section_id ] ) ) {
-                $this->finish( 'error', 'Choose a section available to your OSM application.', 'configuration#osm-waiting-list' );
+                $this->finish( 'error', 'Choose a section available to your OSM application.', 'waiting_list#osm-waiting-list' );
             }
         }
         update_option( 'osm_waiting_list_section_id', $section_id, false );
-        $this->finish( 'success', 'Waiting list section saved.', 'configuration#osm-waiting-list' );
+        $this->finish( 'success', 'Waiting list section saved.', 'waiting_list#osm-waiting-list' );
     }
 
     /**
@@ -290,13 +297,13 @@ class OSM_Admin {
     public function clear_waiting_list(): void {
         $this->require_admin( 'osm_clear_waiting_list_nonce' );
         delete_option( 'osm_waiting_list_section_id' );
-        $this->finish( 'success', 'Waiting list disabled.', 'configuration#osm-waiting-list' );
+        $this->finish( 'success', 'Waiting list disabled.', 'waiting_list#osm-waiting-list' );
     }
 
     /**
      * Save publication choices and independent full/initial/hidden name limits.
      * @param string $nonce Action nonce, including the legacy public-data action.
-     * @return void Redirects to Configuration; invalid modes are not saved.
+     * @return void Redirects to the relevant settings page; invalid modes are not saved.
      */
     public function save_privacy( string $nonce = 'osm_privacy_nonce' ): void {
         $this->require_admin();
@@ -310,19 +317,19 @@ class OSM_Admin {
         try {
             OSM_Options::set_name_display( $this->posted_text( 'osm_firstname_display' ) ?: 'hidden', $this->posted_text( 'osm_lastname_display' ) ?: 'hidden' );
         } catch ( InvalidArgumentException $error ) {
-            $this->finish( 'error', $error->getMessage(), 'configuration#osm-section-points' );
+            $this->finish( 'error', $error->getMessage(), 'section_points#osm-section-points' );
         }
         update_option( 'osm_public_patrol_sections', $public, false );
         delete_option( 'osm_patrol_scope' );
         OSM_API::clear_authorization();
-        $this->finish( 'success', 'Section Points settings saved.', 'configuration#osm-section-points' );
+        $this->finish( 'success', 'Section Points settings saved.', 'section_points#osm-section-points' );
     }
 
     /**
      * Retain the old authenticated save action for already-open settings pages.
      *
      * Legacy waiting-list URL options are preserved for explicit-section displays;
-     * new waiting-list configuration is managed in Configuration.
+     * new waiting-list configuration is managed on the Waiting List page.
      *
      * @return void Delegates to the protected Privacy save handler and redirects.
      */
@@ -333,7 +340,7 @@ class OSM_Admin {
     /**
      * Validate and save display date/time formats using the existing options service.
      *
-     * @return void Redirects to Configuration with a success or validation notice.
+     * @return void Redirects to the relevant settings page with a success or validation notice.
      */
     public function save_advanced_options(): void {
         $this->require_admin();
@@ -341,29 +348,45 @@ class OSM_Admin {
         try {
             OSM_Options::set_date_format( $this->posted_text( 'osm_date_format' ) );
             OSM_Options::set_time_format( $this->posted_text( 'osm_time_format' ) );
-            $this->finish( 'success', 'Display options saved successfully.', 'configuration' );
+            $this->finish( 'success', 'Display options saved successfully.', 'advanced' );
         } catch ( Exception $error ) {
-            $this->finish( 'error', 'Display options were not saved. ' . $error->getMessage(), 'configuration' );
+            $this->finish( 'error', 'Display options were not saved. ' . $error->getMessage(), 'advanced' );
         }
     }
 
     /**
      * Clear plugin API caches and tokens without changing configured settings.
      *
-     * @return void Redirects to General after the administrator and nonce checks.
+     * @return void Redirects to Advanced after the administrator and nonce checks.
      */
     public function purge_cache(): void {
         $this->require_admin();
         check_admin_referer( 'osm_purge_nonce' );
         OSM_Cache::clear_all();
         OSM_API::clear_authorization();
-        $this->finish( 'success', 'Cache purged successfully.', 'configuration#osm-maintenance' );
+        $this->finish( 'success', 'Cache purged successfully.', 'advanced#osm-maintenance' );
+    }
+
+    /**
+     * Disconnect the application without deleting display, exclusion or mail settings.
+     *
+     * Clearing API caches prevents old bearer tokens or cached feeds from surviving
+     * the reset. The existing account-change safeguards apply on reauthentication.
+     * @return void Redirects to the authentication-only settings screen after nonce checks.
+     */
+    public function reset_auth(): void {
+        $this->require_admin();
+        check_admin_referer( 'osm_reset_auth_nonce' );
+        OSM_Cache::clear_all();
+        OSM_API::clear_authorization();
+        foreach ( [ 'osm_client_id', 'osm_client_secret', 'osm_api_usage', 'osm_waiting_list_oauth', 'osm_waiting_list_oauth_generation' ] as $option ) { delete_option( $option ); }
+        $this->finish( 'success', 'Authentication reset. Reconnect your OSM application to continue.', 'authentication' );
     }
 
     /**
      * Remove credentials, publication consent, waiting-list settings, formats, and caches.
      *
-     * @return void Redirects to the unconfigured General page after nonce verification.
+     * @return void Redirects to the authentication-only page after nonce verification.
      */
     public function reset_configuration(): void {
         $this->require_admin();

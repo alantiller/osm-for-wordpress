@@ -52,29 +52,26 @@ class OSM_Shortcodes {
     }
 
     /**
-     * Reject unpublished sections before making any remote request.
+     * Resolve a programme/event presentation without changing its data or permissions.
      *
-     * @param mixed $atts Shortcode or builder attributes containing section selections.
-     * @param string $type Display kind; Section Points is enabled independently from feeds.
-     * @return list<int> Validated IDs approved for this display.
-     * @throws InvalidArgumentException If the section selection is malformed.
-     * @throws RuntimeException If any selected section is disabled.
+     * Explicit shortcode/block attributes win. Theme functions can select a default
+     * through osm_display_layout for renders with no explicit choice.
+     * @param array<string,mixed> $atts Render attributes; layout accepts table, grid or vertical; tiles is a legacy alias for grid.
+     * @param string $type Programme or events, supplied by the renderer.
+     * @return string Allowlisted template layout.
+     * @throws InvalidArgumentException If the requested layout is unsupported.
      */
-    private static function enabled_section_ids( mixed $atts, string $type = 'programme' ): array {
-        $ids = self::section_ids( $atts );
-        $enabled = get_option( 'patrols' === $type ? 'osm_public_patrol_sections' : 'osm_enabled_sections', [] );
-        foreach ( $ids as $id ) {
-            if ( empty( $enabled[ $id ] ) ) {
-                throw new RuntimeException( 'The selected section is not available for display.' );
-            }
-        }
-        return $ids;
+    private static function display_layout( array $atts, string $type ): string {
+        $layout = $atts['layout'] ?? '';
+        if ( '' === $layout ) { $layout = apply_filters( 'osm_display_layout', 'table', $type, $atts ); }
+        if ( ! in_array( $layout, [ 'table', 'grid', 'vertical', 'tiles' ], true ) ) { throw new InvalidArgumentException( 'Choose table, grid tiles or vertical tiles.' ); }
+        return 'tiles' === $layout ? 'grid' : $layout;
     }
 
     /**
-     * Render current-term programme tables, containing failures as public messages.
+     * Render current-term programme displays, containing failures as public messages.
      *
-     * @param mixed $atts Section attributes and optional boolean-like futureonly value.
+     * @param mixed $atts Section attributes, optional futureonly/combine flags and layout (table, grid or vertical).
      * @return string Escaped programme HTML or a public validation/unavailability message.
      */
     public function render_programme( mixed $atts ): string {
@@ -82,9 +79,9 @@ class OSM_Shortcodes {
     }
 
     /**
-     * Render current-term event tables for one or more enabled sections.
+     * Render current-term event displays for one or more enabled sections.
      *
-     * @param mixed $atts Section attributes and optional boolean-like futureonly value.
+     * @param mixed $atts Section attributes, optional futureonly/combine flags and layout (table, grid or vertical).
      * @return string Escaped event HTML; API failures never expose their response bodies.
      */
     public function render_events( mixed $atts ): string {
@@ -133,40 +130,45 @@ class OSM_Shortcodes {
      * Fetch and render each public section independently, preserving successful feeds.
      *
      * @param string $type Internal renderer kind: programme, events or patrols.
-     * @param mixed $atts Section selections and optional futureonly flag.
-     * @return string Section HTML with headings for multiple selections; failures are contained.
+     * @param mixed $atts Section selections and optional futureonly/layout/combine settings.
+     * @return string Section HTML with headings, or one grouped table when combine is true; failures are contained.
      */
     private function render_sections( string $type, mixed $atts ): string {
+        $atts = is_array( $atts ) ? $atts : [];
         try {
-            $ids = self::enabled_section_ids( $atts, $type );
+            $ids = self::section_ids( $atts );
+            $layout = 'patrols' === $type ? 'tiles' : self::display_layout( $atts, $type );
         } catch ( Exception $error ) {
             return self::error( $error->getMessage() );
+        }
+        $enabled = (array) get_option( 'patrols' === $type ? 'osm_public_patrol_sections' : 'osm_enabled_sections', [] );
+        if ( ! array_intersect_key( array_filter( $enabled ), array_flip( $ids ) ) ) {
+            return self::error( 'The selected section is not available for display.' );
         }
         try {
             $sections = OSM_API::get_sections();
         } catch ( Throwable $error ) {
             return self::error( 'This information is currently unavailable. Please check back later.' );
         }
-        $atts = is_array( $atts ) ? $atts : [];
         $futureonly = filter_var( $atts['futureonly'] ?? false, FILTER_VALIDATE_BOOLEAN );
+        $combine = 'patrols' !== $type && 'table' === $layout && filter_var( $atts['combine'] ?? false, FILTER_VALIDATE_BOOLEAN );
+        $section_groups = [];
+        $date_format = OSM_Options::get_date_format() ?: 'd M Y';
+        $time_format = OSM_Options::get_time_format() ?: 'H:i';
         $output = '';
         foreach ( $ids as $sectionid ) {
-            $heading = self::text( $sections[ $sectionid ]['sectionname'] ?? '' );
+            $section = ! empty( $enabled[ $sectionid ] ) ? ( $sections[ $sectionid ] ?? [] ) : [];
+            $heading = implode( ': ', array_filter( [ self::text( $section['groupname'] ?? '' ), self::text( $section['sectionname'] ?? '' ) ] ) ) ?: 'Section unavailable';
             $html = '';
+            $items = [];
+            $message = '';
             try {
-                if ( ! isset( $sections[ $sectionid ] ) ) {
+                if ( empty( $enabled[ $sectionid ] ) || ! isset( $sections[ $sectionid ] ) ) {
                     throw new RuntimeException();
                 }
-                $date_format = OSM_Options::get_date_format() ?: 'd M Y';
-                $time_format = OSM_Options::get_time_format() ?: 'H:i';
                 if ( 'patrols' === $type ) {
-                    $public = get_option( 'osm_public_patrol_sections', [] );
-                    if ( empty( $public[ $sectionid ] ) ) {
-                        $html = self::error( 'Section Points has not been enabled for this section.' );
-                    } else {
-                        $patrols = OSM_API::get_patrols( $sectionid );
-                        $html = empty( $patrols ) ? self::error( 'No patrols are currently available.' ) : self::template( 'patrols', compact( 'patrols' ) );
-                    }
+                    $patrols = OSM_API::get_patrols( $sectionid );
+                    $html = empty( $patrols ) ? self::error( 'No patrols are currently available.' ) : self::template( 'patrols', compact( 'patrols' ) );
                 } else {
                     $termid = OSM_API::get_current_term( $sectionid );
                     $response = 'programme' === $type ? OSM_API::get_programme( $sectionid, $termid ) : OSM_API::get_events( $sectionid, $termid );
@@ -186,23 +188,32 @@ class OSM_Shortcodes {
                         } );
                     }
                     if ( empty( $items ) ) {
-                        $html = self::error( $futureonly ? 'No upcoming activities are currently available.' : 'No activities are currently available.' );
-                    } else {
+                        $message = $futureonly ? 'No upcoming activities are currently available.' : 'No activities are currently available.';
+                    } elseif ( ! $combine ) {
                         $programme = $events = $items;
-                        $html = self::template( $type, compact( 'programme', 'events', 'date_format', 'time_format' ) );
+                        $template = 'table' !== $layout ? $type . '-tiles' : $type;
+                        $html = self::template( $template, compact( 'programme', 'events', 'date_format', 'time_format', 'layout' ) );
                     }
                 }
+            } catch ( OSM_Current_Term_Exception $error ) {
+                $message = 'No current OSM term is available for this section.';
             } catch ( Throwable $error ) {
                 // Do not publish API error bodies, bearer tokens or member information.
-                $html = self::error( 'This information is currently unavailable. Please check back later.' );
+                $message = 'This information is currently unavailable. Please check back later.';
             }
+            if ( $combine ) {
+                // Preserve section order and safe errors inside the same table; never merge permissions.
+                $section_groups[] = [ 'heading' => $heading, 'items' => $items, 'message' => $message ];
+                continue;
+            }
+            if ( '' !== $message ) { $html = self::error( $message ); }
             if ( count( $ids ) > 1 ) {
                 $output .= '<section class="osm-section"><h3 class="osm-section-title">' . esc_html( $heading ) . '</h3>' . $html . '</section>';
             } else {
                 $output .= $html;
             }
         }
-        return $output;
+        return $combine ? self::template( $type, compact( 'section_groups', 'date_format', 'time_format' ) ) : $output;
     }
 
     /**

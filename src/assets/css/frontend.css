@@ -1,36 +1,19 @@
-.osm-public-table {
-    width: 100%;
-    border-collapse: collapse;
-    border: 1px solid #e7e7e7;
-}
-
-.osm-public-table thead {
-    background-color: #f9f9f9;
-    border: 1px solid #e7e7e7;
-}
-
-.osm-public-table th {
-    text-align: left;
-    padding: 12px;
-    font-weight: 600;
-}
-
-.osm-public-table td {
-    padding: 12px;
-}
-
-.osm-public-table tr:nth-child(even) {
-    background-color: #fbfbfb;
-}
-
-.osm-public-table a {
-    color: #007bff;
-    text-decoration: none;
-}
-
-.osm-public-table a:hover {
-    text-decoration: underline;
-}
+/* Public displays share the form's clean surfaces, spacing and readable typography. */
+.osm-table-card, .osm-patrols, .osm-activity-tiles { --osm-display-background: #fff; --osm-display-text: #1d2327; --osm-display-border: #a7aab0; --osm-display-accent: #7413dc; --osm-display-header-text: #fff; --osm-display-radius: 8px; color: var(--osm-display-text); }
+.osm-table-card { box-sizing: border-box; width: 100%; overflow-x: auto; border: 1px solid var(--osm-display-border); border-radius: var(--osm-display-radius); background: var(--osm-display-background); margin-block: 1.5rem 0; padding: 0; }
+.osm-table-card:focus-visible { outline: 3px solid var(--osm-display-accent); outline-offset: 3px; }
+.osm-table-card > table.osm-public-table { width: 100%; min-width: 32rem; display: table; margin: 0; border: 0; border-spacing: 0; border-collapse: collapse; color: var(--osm-display-text); background: var(--osm-display-background); font: inherit; line-height: 1.6; overflow-wrap: anywhere; }
+.osm-table-card .osm-public-table th { background: var(--osm-display-accent); color: var(--osm-display-header-text); font-weight: 600; text-align: left; padding: 16px; border: 0; overflow-wrap: normal; word-break: normal; }
+.osm-table-card .osm-public-table td { padding: 16px; border: 0; border-top: 1px solid var(--osm-display-border); vertical-align: top; }
+.osm-table-card .osm-public-table tbody tr:nth-child(even) { background: #f6f7f7; }
+.osm-patrols { list-style: none; padding: 0; margin: 1.5rem 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); gap: 20px; font: inherit; line-height: 1.6; }
+.osm-patrols > .osm-patrol-card { padding: 0; margin: 0; min-width: 0; border: 1px solid var(--osm-display-border); border-radius: var(--osm-display-radius); overflow: hidden; background: var(--osm-display-background); }
+.osm-patrol-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; background: var(--osm-display-accent, #7413dc); color: var(--osm-display-header-text, #fff); padding: 16px; font-weight: 600; }
+.osm-patrol-name { min-width: 0; overflow-wrap: anywhere; }
+.osm-patrol-points { flex: 0 0 auto; max-width: 48%; text-align: right; overflow-wrap: anywhere; }
+.osm-patrol-card .osm-patrol-members { list-style: none; padding: 4px 16px; margin: 0; }
+.osm-patrol-card .osm-patrol-members > li { padding: 12px 0; margin: 0; border-bottom: 1px solid var(--osm-display-border, #c3c4c7); }
+.osm-patrol-card .osm-patrol-members > li:last-child { border-bottom: 0; }
 
 .osm-error-card {
     padding: 20px;
@@ -54,16 +37,14 @@
     margin-bottom: 1rem;
 }
 
-.osm-public-table {
-    overflow-wrap: anywhere;
-}
+
 
 /* Override these variables on .osm-waiting-list to match a site's theme. */
 .osm-waiting-list {
     --osm-form-accent: #2271b1;
     --osm-form-background: #fff;
     --osm-form-text: #1d2327;
-    --osm-form-border: #c3c4c7;
+    --osm-form-border: #a7aab0;
     --osm-form-button-text: #fff;
     --osm-form-radius: 8px;
     --osm-form-max-width: 44rem;
@@ -103,3 +84,34 @@
 .osm-waiting-list .osm-form-group .osm-dob > legend { font-size: 1rem; font-weight: 500; margin-bottom: 6px; }
 .osm-waiting-list .osm-form-field textarea { resize: vertical; }
 .osm-waiting-list .osm-form-field select:focus-visible, .osm-waiting-list .osm-form-field textarea:focus-visible { outline: 3px solid var(--osm-form-accent); outline-offset: 3px; }
+
+/* Alternative activity cards share the same data and presentation variables as tables. */
+.osm-activity-tiles { display: grid; width: 100%; box-sizing: border-box; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 20px; margin-top: 1.5rem; }
+.osm-activity-tiles > .osm-activity-tile { margin: 0; padding: 0; min-width: 0; border: 1px solid var(--osm-display-border); border-radius: var(--osm-display-radius); background: var(--osm-display-background); color: var(--osm-display-text); overflow: hidden; }
+.osm-activity-tiles > .osm-activity-tile > h3 { margin: 0; padding: 16px; color: var(--osm-display-header-text); background: var(--osm-display-accent); font-size: 1.1em; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.osm-activity-body { padding: 16px; line-height: 1.6; overflow-wrap: anywhere; }
+.osm-activity-body p, .osm-activity-body dl { margin: 0 0 12px; }
+.osm-activity-body > :last-child { margin-bottom: 0; }
+.osm-activity-body dt { font-weight: 600; }
+.osm-activity-body dd { margin: 0 0 12px; }
+.osm-activity-body dd:last-child { margin-bottom: 0; }
+/* Formatting plugins may leave blank direct-child paragraphs around shortcode tables. */
+.osm-table-card > p:empty, .osm-table-card > br { display: none; }
+
+/* Combined tables identify each independently authorised section with a row-group header. */
+.osm-table-card .osm-public-table .osm-table-section th { background: #f0e6fc; color: var(--osm-display-text); border-top: 1px solid var(--osm-display-border); }
+
+/* Vertical tiles use compact full-width rows, with the title beside the details. */
+.osm-activity-tiles.osm-activity-tiles--vertical { display: flex; flex-direction: column; gap: 8px; }
+.osm-activity-tiles--vertical > .osm-activity-tile { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); width: 100%; }
+.osm-activity-tiles.osm-activity-tiles--vertical > .osm-activity-tile > h3 { padding: 12px 16px; background: #f6f7f7; color: var(--osm-display-text); border-left: 3px solid var(--osm-display-accent); border-right: 1px solid var(--osm-display-border); font-size: 1em; }
+.osm-activity-tiles--vertical .osm-activity-body { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 12px 24px; padding: 12px 16px; }
+.osm-activity-tiles--vertical .osm-activity-body > dl { flex: 0 1 10rem; margin: 0; }
+.osm-activity-tiles--vertical .osm-activity-body > p { flex: 1 1 14rem; margin: 0; }
+.osm-activity-tiles--vertical .osm-activity-body > .osm-activity-details { flex: 1 1 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); gap: 12px 24px; }
+.osm-activity-details > div { margin-bottom: 12px; }
+.osm-activity-details > div:last-child, .osm-activity-tiles--vertical .osm-activity-details > div { margin-bottom: 0; }
+@media (max-width: 600px) {
+    .osm-activity-tiles--vertical > .osm-activity-tile { grid-template-columns: minmax(0, 1fr); }
+    .osm-activity-tiles.osm-activity-tiles--vertical > .osm-activity-tile > h3 { border-right: 0; border-bottom: 1px solid var(--osm-display-border); }
+}
