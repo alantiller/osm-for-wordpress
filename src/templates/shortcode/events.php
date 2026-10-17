@@ -1,3 +1,6 @@
+<?php
+if ( ! defined( 'ABSPATH' ) ) { exit; }
+?>
 <table class="osm-public-table">
     <thead>
         <tr>
@@ -10,10 +13,10 @@
     <tbody>
         <?php foreach ( $events as $event ): ?>
             <tr>
-                <td style="white-space: nowrap;"><?php echo esc_html( DateTime::createFromFormat('d/m/Y', $event['startdate'])->format($date_format) ) . ' ' . esc_html( date( $time_format, strtotime( $event['starttime'] ) ) ); ?></td>
-                <td style="white-space: nowrap;"><?php echo esc_html( DateTime::createFromFormat('d/m/Y', $event['enddate'])->format($date_format) ) . ' ' . esc_html( date( $time_format, strtotime( $event['endtime'] ) ) ); ?></td>
-                <td style="white-space: nowrap;"><?php echo esc_html( $event['name'] ); ?></td>
-                <td><?php echo esc_html( $event['location'] ); ?></td>
+                <td><?php echo esc_html( OSM_Shortcodes::format_date( $event['startdate_g'] ?? $event['startdate'] ?? $event['eventdate'] ?? '', $date_format ) ) . ' ' . esc_html( OSM_Shortcodes::format_time( $event['starttime'] ?? '', $time_format ) ); ?></td>
+                <td><?php echo esc_html( OSM_Shortcodes::format_date( $event['enddate_g'] ?? $event['enddate'] ?? '', $date_format ) ) . ' ' . esc_html( OSM_Shortcodes::format_time( $event['endtime'] ?? '', $time_format ) ); ?></td>
+                <td><?php echo esc_html( OSM_Shortcodes::text( $event['name'] ?? '' ) ); ?></td>
+                <td><?php echo esc_html( OSM_Shortcodes::text( $event['location'] ?? '' ) ); ?></td>
             </tr>
         <?php endforeach; ?>
     </tbody>

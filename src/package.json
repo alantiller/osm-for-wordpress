@@ -1,12 +1,13 @@
 {
-    "name": "osm-for-wordpress",
-    "version": "1.0.0",
+    "name": "online-scout-manager",
+    "version": "1.1.0",
     "scripts": {
-        "build": "wp-scripts build",
-        "start": "wp-scripts start"
+        "build": "node scripts/build.mjs",
+        "start": "node scripts/build.mjs --watch",
+        "check": "node scripts/build.mjs --check",
+        "test": "node --test scripts/test-blocks.mjs"
     },
-    "devDependencies": {
-        "@wordpress/scripts": "^25.0.0",
-        "sass": "^1.45.2"
+    "engines": {
+        "node": ">=20"
     }
 }

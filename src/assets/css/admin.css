@@ -1,4 +1,42 @@
-.osm-actions {
-    display: flex;
-    gap: 10px;
-}
+/* Native WordPress tiles with explicit spacing and responsive columns. */
+.osm-admin { --osm-gap: 24px; }
+.osm-admin .nav-tab-wrapper { margin: 20px 0 0; }
+.osm-admin .osm-settings-columns { display: grid; grid-template-columns: minmax(0, 3fr) minmax(280px, 1fr); gap: var(--osm-gap); margin-top: var(--osm-gap); align-items: start; }
+.osm-admin .osm-settings-columns--configuration, .osm-admin .osm-settings-columns--authentication { grid-template-columns: minmax(0, 1fr); max-width: 1120px; }
+.osm-admin .osm-settings-columns--authentication { max-width: 800px; }
+.osm-admin .osm-settings-column { display: grid; gap: var(--osm-gap); min-width: 0; }
+.osm-admin .osm-settings-tile { margin: 0; padding: 20px; min-width: 0; box-sizing: border-box; }
+.osm-admin .osm-settings-tile h2 { margin: 0 0 16px; font-size: 16px; line-height: 1.4; }
+.osm-admin .osm-settings-tile h3 { margin: 24px 0 12px; line-height: 1.4; }
+.osm-admin .osm-settings-tile h3:first-child { margin-top: 0; }
+.osm-admin .osm-settings-tile h4 { margin: 24px 0 12px; }
+.osm-admin .osm-settings-tile p { margin: 12px 0; }
+.osm-admin .osm-settings-tile > :last-child { margin-bottom: 0; }
+.osm-admin .osm-settings-tile form { margin: 0; }
+.osm-admin .osm-settings-tile .submit { margin: 20px 0 0; padding: 0; }
+.osm-admin .osm-settings-tile .description { margin: 12px 0 0; }
+.osm-admin .osm-section-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.osm-admin .osm-section-tile { background: #f6f7f7; padding: 16px; }
+.osm-admin .osm-section-meta { color: #50575e; }
+.osm-admin .osm-settings-tile label:not(:has(input[type="checkbox"])) { display: block; margin-bottom: 6px; }
+.osm-admin .osm-section-rows { table-layout: fixed; }
+.osm-admin .osm-section-rows th { width: 68%; font-weight: 400; }
+.osm-admin .osm-section-rows td { vertical-align: middle; }
+.osm-admin .osm-section-rows label { margin: 0 !important; }
+.osm-admin .osm-settings-tile input, .osm-admin .osm-settings-tile select, .osm-admin .osm-settings-tile textarea { max-width: 100%; box-sizing: border-box; }
+.osm-admin .osm-wide-control { width: 100%; }
+.osm-admin .osm-member-table { table-layout: fixed; }
+.osm-admin th, .osm-admin td, .osm-admin li, .osm-admin code, .osm-admin h3 { overflow-wrap: anywhere; }
+.osm-admin #osm-section-points > .osm-section-tile { margin-top: 20px; }
+.osm-admin .osm-preview-table { margin-top: 20px; }
+.osm-admin .osm-preview-table th { width: 90px; }
+.osm-admin .osm-points-preview ul { margin: 0; padding-left: 20px; list-style: disc; }
+.osm-admin .osm-points-preview li { margin: 4px 0; }
+.osm-admin .osm-settings-links { margin: 0; }
+.osm-admin .osm-settings-links li { margin-bottom: 20px; }
+.osm-admin .osm-settings-links li:last-child { margin-bottom: 0; }
+.osm-admin [hidden] { display: none !important; }
+@media (max-width: 1400px) { .osm-admin .osm-settings-columns { grid-template-columns: minmax(0, 3fr) minmax(250px, 1fr); } .osm-admin .osm-settings-columns--configuration, .osm-admin .osm-settings-columns--authentication { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 1279px) { .osm-admin .osm-section-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .osm-admin .osm-settings-columns { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .osm-admin { --osm-gap: 20px; } .osm-admin .osm-settings-tile { padding: 16px; } .osm-admin .osm-section-tiles { grid-template-columns: minmax(0, 1fr); } .osm-admin .osm-preview-table th { width: 65px; } }

@@ -1,22 +1,31 @@
 {
-  "apiVersion": 2,
-  "name": "osm/events",
-  "title": "OSM Events",
-  "category": "widgets",
-  "icon": "calendar-alt",
-  "description": "Display the OSM events for a section.",
-  "attributes": {
-    "sectionid": {
-      "type": "string",
-      "default": ""
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "osm/events",
+    "title": "OSM Events",
+    "category": "widgets",
+    "icon": "calendar-alt",
+    "description": "Display the OSM events for one or more sections.",
+    "textdomain": "online-scout-manager",
+    "attributes": {
+        "sectionid": {
+            "type": "string",
+            "default": ""
+        },
+        "sectionids": {
+            "type": "string",
+            "default": ""
+        },
+        "futureonly": {
+            "type": "boolean",
+            "default": false
+        }
     },
-    "futureonly": {
-      "type": "boolean",
-      "default": false
-    }
-  },
-  "editorScript": "build/events-editor.js",
-  "editorStyle": "build/events-editor.css",
-  "style": "build/events-style.css",
-  "render": "file:./render.php"
+    "supports": {
+        "html": false
+    },
+    "editorScript": "osm-blocks-editor",
+    "editorStyle": "osm-blocks-editor",
+    "style": "osm-frontend-style",
+    "render": "file:./render.php"
 }

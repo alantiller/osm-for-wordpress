@@ -45,3 +45,61 @@
     font-size: 18px;
     font-weight: 600;
 }
+
+.osm-section + .osm-section {
+    margin-top: 2rem;
+}
+
+.osm-section-title {
+    margin-bottom: 1rem;
+}
+
+.osm-public-table {
+    overflow-wrap: anywhere;
+}
+
+/* Override these variables on .osm-waiting-list to match a site's theme. */
+.osm-waiting-list {
+    --osm-form-accent: #2271b1;
+    --osm-form-background: #fff;
+    --osm-form-text: #1d2327;
+    --osm-form-border: #c3c4c7;
+    --osm-form-button-text: #fff;
+    --osm-form-radius: 8px;
+    --osm-form-max-width: 44rem;
+    color: var(--osm-form-text);
+    max-width: var(--osm-form-max-width);
+    width: 100%;
+    margin-block: 1.5rem;
+    font-size: 1rem;
+    line-height: 1.6;
+}
+.osm-waiting-list .osm-application-form { margin: 0; padding: clamp(16px, 4vw, 28px); border: 1px solid var(--osm-form-border); border-radius: var(--osm-form-radius); background: var(--osm-form-background); color: var(--osm-form-text); box-sizing: border-box; }
+.osm-waiting-list .osm-application-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.osm-waiting-list .osm-application-form > fieldset > legend { padding: 0; font-size: 1.5rem; line-height: 1.3; font-weight: 600; margin-bottom: 12px; }
+.osm-waiting-list .osm-application-form .osm-form-group { margin-top: 24px; }
+.osm-waiting-list .osm-form-group legend { font-size: 1.125rem; font-weight: 600; padding: 0; margin-bottom: 12px; }
+.osm-waiting-list .osm-form-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.osm-waiting-list .osm-form-fields .osm-form-field { margin: 0; min-width: 0; }
+.osm-waiting-list .osm-form-field--wide { grid-column: 1 / -1; }
+.osm-waiting-list .osm-form-field label { display: block; margin-bottom: 6px; font-size: 1rem; font-weight: 500; }
+.osm-waiting-list .osm-form-field input, .osm-waiting-list .osm-form-field select, .osm-waiting-list .osm-form-field textarea { display: block; width: 100%; max-width: none; min-width: 0; min-height: 44px; margin: 0; padding: 10px 12px; border: 1px solid var(--osm-form-border); border-radius: 4px; background: var(--osm-form-background); color: var(--osm-form-text); box-sizing: border-box; font: inherit; line-height: 1.4; }
+.osm-waiting-list .osm-application-form p { margin: 16px 0; }
+.osm-waiting-list .osm-application-form .osm-form-consent { display: flex; align-items: flex-start; gap: 10px; margin: 24px 0 0; font-size: .9375rem; font-weight: 400; }
+.osm-waiting-list .osm-form-consent input[type="checkbox"] { flex: 0 0 auto; width: 18px; height: 18px; margin: 4px 0 0; accent-color: var(--osm-form-accent); }
+.osm-waiting-list .osm-form-consent span { min-width: 0; }
+.osm-waiting-list .osm-application-form button[type="submit"] { display: inline-block; min-height: 44px; padding: 12px 20px; border: 2px solid transparent; border-radius: 4px; background: var(--osm-form-accent); color: var(--osm-form-button-text); font: inherit; font-weight: 600; line-height: 1.4; cursor: pointer; }
+.osm-waiting-list .osm-application-form button[type="submit"]:hover { text-decoration: underline; }
+.osm-waiting-list .osm-application-form button:disabled { opacity: .6; cursor: wait; }
+.osm-waiting-list .osm-application-form input:focus-visible, .osm-waiting-list .osm-application-form button:focus-visible { outline: 3px solid var(--osm-form-accent); outline-offset: 3px; }
+.osm-waiting-list .osm-form-notice, .osm-waiting-list .osm-form-errors { padding: 16px; border: 1px solid var(--osm-form-border); border-left: 4px solid var(--osm-form-accent); border-radius: 4px; background: var(--osm-form-background); overflow-wrap: anywhere; }
+.osm-waiting-list .osm-form-errors { border-left-color: #b32d2e; }
+.osm-waiting-list .osm-form-status:empty { display: none; }
+.osm-waiting-list .osm-form-honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+@media (max-width: 600px) { .osm-waiting-list .osm-form-fields { grid-template-columns: minmax(0, 1fr); } .osm-waiting-list .osm-application-form button[type="submit"] { width: 100%; } }
+
+.osm-waiting-list .osm-dob-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr); gap: 12px; max-width: 25rem; }
+.osm-waiting-list .osm-dob-fields p { margin: 0; }
+.osm-waiting-list .osm-form-group .osm-dob > legend { font-size: 1rem; font-weight: 500; margin-bottom: 6px; }
+.osm-waiting-list .osm-form-field textarea { resize: vertical; }
+.osm-waiting-list .osm-form-field select:focus-visible, .osm-waiting-list .osm-form-field textarea:focus-visible { outline: 3px solid var(--osm-form-accent); outline-offset: 3px; }

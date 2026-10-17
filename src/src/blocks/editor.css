@@ -1,0 +1,15 @@
+.osm-block-editor {
+    border: 1px dashed #0073aa;
+    border-radius: 4px;
+    background: #f0f8ff;
+    padding: 16px;
+}
+
+.osm-block-editor p {
+    margin: 8px 0 0;
+}
+
+.osm-block-editor .osm-block-editor-note {
+    font-size: 13px;
+    color: #50575e;
+}

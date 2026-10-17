@@ -1,158 +1,151 @@
-# Online Scout Manager for WordPress
+# Online Scout Manager
 
-**This WordPress plugin is not affiliated with Online Scout Manager in any way.**
+Display Online Scout Manager programmes, events and patrols and accept waiting-list applications in WordPress shortcodes and Gutenberg blocks. Requires WordPress 6.7+ and PHP 8.0+. This plugin is not affiliated with Online Scout Manager.
 
-The Online Scout Manager (OSM) for WordPress plugin allows you to display programmes and events directly from OSM on your website. The plugin integrates with the OSM API to fetch and display data from your sections, ensuring an up-to-date representation of your scouting activities.
+The installable package is `online-scout-manager/online-scout-manager.php`. If replacing an existing installation under the old name, deactivate that copy before activating this package. Saved settings and content identifiers are retained.
 
----
+## Settings
 
-## Features
+Every settings section uses native WordPress tiles with consistent spacing. Admin asset versions follow the file modification time so fixes load while the release stays at 1.1.0.
 
-- Display section programmes and events using shortcodes.
-- Manage sections, authentication, and cache directly from the WordPress admin.
-- Dynamically retrieve and cache data from OSM for optimal performance.
+- **General:** sections and shortcode documentation in the left column; settings/help tiles in the right. Enable website displays here.
+- **Configuration:** per-section member-name formats and exclusions, date/time formats, waiting-list selection and cache/reset tiles.
+- **Authentication:** application credentials and detailed setup instructions in one tile.
 
----
+Old General/Sections, Shortcodes, Advanced Options and Public Data bookmarks are routed to their replacement pages. There is no separate Shortcodes tab or Patrol API permission field.
 
-## Installation
+## Authentication
 
-1. Download the latest release of the plugin from [here](https://github.com/alantiller/osm-for-wordpress/releases)
-2. Log in to your WordPress admin dashboard.
-3. Navigate to **Plugins > Add New > Upload Plugin**.
-4. Select the zip file and click **Install Now**.
-5. Activate the plugin.
+Create an OSM application under Settings → My Account Details → Developer Tools. Enable **Client Credentials Grant** and save the Client ID/Secret under Authentication. The detailed instructions on that tab explain how to create the application and reveal the credentials.
 
----
+Every token request uses Client Credentials and all four scopes by default:
 
-## Setup
+- `section:programme:read`
+- `section:event:read`
+- `section:member:read`
+- `section:member:write`
 
-### Step 1: Generate Your Client ID and Secret
+Grant the application access to the sections you select in OSM. The same server-only token supports feeds, patrols and waiting-list writes. Credential changes reset publication choices and the waiting-list destination.
 
-To authenticate with the OSM API, you'll need a **Client ID** and **Client Secret**. Follow these steps to generate them:
+## Section Points and name formats
 
-1. Log in to [Online Scout Manager (OSM)](https://www.onlinescoutmanager.co.uk).
-2. Expand the **Settings** menu at the bottom of the page.
-3. Select **My Account Details**.
-4. Click **Developer Tools** from the menu on the left-hand side.
-5. Click **Create Application**.
-6. Provide a name for your application and click **Save**.
-7. Enter "**I am a developer**" into the Confirmation box and click "**Reveal Credentials**".
-8. The **Client ID** and **Client Secret** will be displayed **once only**. Make sure to copy and save them securely.
-9. Close the window, then on the application you just created, click "**Edit**".
-10. Tick the box labelled "**Client Credentials Grant**" and click "**Save**".
+On **General**, use each section’s **Show Programme and Events** and **Show Section Points** rows independently. There is no additional website-display switch.
 
-### Step 2: Authenticate with OSM
+In **Configuration → Section Points**, select **Hidden**, **Full name** or **Initial only** independently for first and last names for each section:
 
-1. Go to **OSM Settings** in the WordPress admin menu.
-2. Click on the **Authentication** tab.
-3. Enter your **Client ID** and **Client Secret**.
-4. Click **Save & Authenticate** to validate your credentials.
+| First name | Last name | Example |
+| --- | --- | --- |
+| Full name | Full name | Alex Taylor |
+| Full name | Hidden | Alex |
+| Hidden | Full name | Taylor |
+| Initial only | Initial only | A. T. |
+| Full name | Initial only | Alex T. |
+| Initial only | Full name | A. Taylor |
+| Hidden | Hidden | Patrol names only |
 
-### Step 3: Enable Sections
+Each enabled Section Points section has an administrator-only member table. Tick **Exclude** beside any member to omit them completely from public member lists. IDs absent from the current roster remain editable under **Other excluded member IDs** so an OSM outage or a member leaving cannot silently remove their exclusion. Each section also has a live Preview row that applies unsaved name formats and exclusions to the currently loaded member list. Saving publishes those choices. Only exclusion IDs and formatting choices are stored; the roster is not cached. Unknown member IDs are omitted whenever exclusions exist.
 
-1. Navigate to the **Sections Enabled** tab.
-2. Select the sections you want to enable by ticking the checkboxes.
-3. Click **Save Sections**. The plugin will automatically fetch and cache the current term for each enabled section.
+Member names are hidden by default; existing global name choices remain the fallback until a section is configured. The API adapter immediately applies these settings and returns only approved display strings. No raw patrol response or member names are cached. Leader/young-leader pseudo-patrols and inactive members are excluded. Member IDs, contact information, dates of birth, photos, ages and ranks are not published.
 
-### Step 4: Verify Configuration
+These controls limit what appears on the website; they do not establish a lawful basis for publication. Review the settings, programme/event content and your organisation's privacy notice before making personal data public.
 
-1. Go to the **General** tab.
-2. Verify that your enabled sections are listed along with their current term IDs.
-3. If needed, use the **Purge Cache** or **Reset Configuration** options.
+## Shortcodes and Gutenberg blocks
 
----
-
-## Usage
-
-### Shortcodes
-
-Use the following shortcodes to display OSM data on your website, you'll be able to find the Section ID in the general tab of the settings menu:
-
-#### Programme Shortcode
-
-```plaintext
-[osm_programme sectionid="SECTION_ID" futureonly="true"]
+```text
+[osm_programme sectionids="12345,67890" futureonly="true"]
+[osm_events sectionids="12345,67890" futureonly="false"]
+[osm_patrols sectionids="12345,67890"]
+[osm_waiting_list]
 ```
 
-- **sectionid** (required): The ID of the section to display.
-- **futureonly** (optional): Set to `true` to show only future events. Default: `false`.
+Programme/event section IDs require **Show Programme and Events**. The existing `[osm_patrols]` shortcode and `osm/patrols` block retain their identifiers but now display the **Section Points** label and require **Show Section Points**, independently of programme/events. `sectionid="12345"` remains supported; comma-separated `sectionids` takes precedence. Selections are deduplicated and multiple feeds are grouped under section headings. One failed feed does not hide another section's successful feed.
 
-Example:
+`futureonly` defaults to false and includes today in the WordPress timezone when true. Gutenberg blocks and shortcodes share rendering and member-name controls.
 
-```plaintext
-[osm_programme sectionid="12345" futureonly="true"]
+Version 1.1.0 removes Divi and Elementor integrations. Use the equivalent shortcodes or Gutenberg blocks for pages that used OSM builder modules/widgets.
+
+## Waiting-list form
+
+1. Select the receiving section in **Configuration → Waiting list** and save. This enables applications independently of feed publication and does not require a current term.
+2. Add `[osm_waiting_list]` or the corresponding Gutenberg block. Content uses the saved section automatically.
+3. Use **Clear waiting list** to remove the destination and disable applications, including submissions from forms already opened in a browser.
+
+There are no hosted-form URL or delivery-mode options. Legacy hosted URLs are ignored. If a WordPress privacy-policy page is configured, the form links to it; otherwise the required acknowledgement explains that details are sent to OSM for the group to manage the application. Keep your organisation's privacy notice accurate.
+
+The form collects only the child's name/date of birth and the adult's name/email, plus an unchecked data-use acknowledgement. Application fields remain in memory for the request and are sent directly to OSM; this plugin does not save, cache, log or email them. Hosting and other plugins may have separate logging policies. No external OSM Helper service is used.
+
+Nonces, a honeypot, signed expiring one-use tokens and an atomic limit of five attempts per server connection/hour deter basic abuse and duplicate submissions. Opaque token hashes and hourly salted IP-derived rate keys are retained temporarily, with deletion scheduled through WordPress cron. No raw IP is stored in those keys. Browser JavaScript refreshes tokens independently of cached HTML. Editor previews disable submission.
+
+OSM member creation and contact update are separate operations. Primary Contact 1 now uses `/ext/customdata/?action=update&section_id=…`, with `associated_id` bound to the confirmed child and only the adult first/last name and email transmitted. This replaces the older member-contact update route. The plugin never retries creation automatically. A failed contact update after confirmed creation produces a partial-result message; uncertain receipt asks the applicant to contact the group before applying again.
+
+The member/contact endpoints follow [the fork's earlier direct implementation](https://github.com/jonbloor/osm-for-wordpress/blob/9ecd8567ea1bf6e0ec093dd5df2f21030e67ccfe/src/includes/class-osm-api.php). The patrol shape follows the maintained [observed OSM API schema](https://github.com/newcastlescouts/osm-api-docs/blob/main/openapi.yaml). These are implementation references, not an official OSM API guarantee. Account-specific permissions and live OSM responses still need staging verification; automated tests never send real applications.
+
+### Date of birth, notes and helping
+
+Date of birth uses separate Day, Month and Year text inputs (dd / mm / yyyy), with numeric keyboards on mobile. Server validation rejects missing parts, impossible dates, future dates and years before 1900, then converts to OSM’s ISO date format. Already-open older forms remain compatible.
+
+Visitors can add an optional note (up to 2,000 characters) and answer whether they are willing to help: Yes, No or “I’d like to find out more”. There is no preselected volunteering answer. Both are saved together to the new member’s Notes field. The receiving OSM section needs exactly one identifiable text field named Notes; field/group IDs are resolved from OSM, never hard-coded. Existing notes are preserved. A missing or ambiguous field produces a clear partial result after child/adult creation, rather than falsely claiming the answers were saved. The form advises applicants not to enter medical details in free-text notes.
+
+The fork’s current parent-note implementation relies on an external helper and a mapped Notes field. This plugin keeps direct OSM writes through custom-data lookup/updateColumn; no helper service is introduced.
+
+### Notifications
+
+In **Configuration → Notifications**, tick the WordPress users who should receive waiting-list alerts and save. Leaving every user unticked disables email. Only user IDs are stored; current addresses are resolved when sending. Each recipient gets a separate plain-text email, keeping recipients’ addresses private from one another.
+
+An alert is sent after confirmed child creation, including partial adult/notes saves. It links to OSM and excludes applicant names, dates of birth, contact details, notes and helping answers. Duplicate form submissions do not resend alerts. Delivery uses the site’s existing `wp_mail` setup; the tile reports the latest accepted/failed counts, which do not guarantee inbox delivery. A mail failure never reverses OSM creation or asks the visitor to apply again. No email is sent by simply saving recipient settings.
+
+### Waiting-list design
+
+The form includes a responsive card, grouped child/adult details, a two-column name layout on wide screens, visible focus styles and clear submission/validation states. Theme typography is inherited. Use your theme’s custom CSS to adjust the scoped variables; no application fields or HTML need editing:
+
+```css
+.osm-waiting-list {
+    --osm-form-accent: #2271b1;
+    --osm-form-button-text: #ffffff;
+    --osm-form-background: #ffffff;
+    --osm-form-text: #1d2327;
+    --osm-form-border: #c3c4c7;
+    --osm-form-radius: 8px;
+    --osm-form-max-width: 44rem;
+}
 ```
 
-#### Events Shortcode
+Choose readable colour combinations. These variables affect only the waiting-list form. Frontend CSS uses a changing file version so updated styling loads while release 1.1.0 is retained.
 
-```plaintext
-[osm_events sectionid="SECTION_ID" futureonly="true"]
+## API usage
+
+The top tile in General’s right column shows requests used, remaining quota and a reset countdown from the last complete OSM `X-RateLimit-Limit`, `X-RateLimit-Remaining` and `X-RateLimit-Reset` headers. Reset is interpreted as seconds until renewal, following the [observed OSM response headers](https://opensource.newcastlescouts.org.uk/). This remains an account-specific staging check.
+
+The dashboard reads stored numeric quota metadata without making extra API calls. Cached feeds and tokens do not increase usage. Error responses, including HTTP 429, can update the quota. Missing/malformed headers retain the last valid observation. Before the first valid observation the tile says Unavailable; after the reset deadline it waits for the next OSM response rather than inventing a fresh quota. Purging the feed cache retains quota history; credential changes/reset clear account-specific observations.
+
+## Cache and reset
+
+Sections, programmes and events are cached for 24 hours; current terms expire by the next WordPress-local midnight. The shared four-scope token is cached below its lifetime. Patrol responses and applications are not cached. Purge uses WordPress's option API to invalidate persistent object caches too.
+
+**Configuration → Cache and reset** contains Purge cache and Reset configuration. Administrator capabilities and action nonces protect every mutation. Clearing the waiting-list selection disables the public form without changing the application credentials.
+
+## Build and verification
+
+Assets are committed. With Node 20+ and PHP available:
+
+```sh
+cd src
+npm run build
+npm run check
+npm test
+cd ..
+php tests/run.php
+php tests/admin.php
+php tests/waiting-list.php
+php tests/usage.php
+php tests/application-details.php
+php tools/package-plugin.php
 ```
 
-- **sectionid** (required): The ID of the section to display.
-- **futureonly** (optional): Set to `true` to show only future events. Default: `false`.
+The package tool lives outside the installable plugin. Runtime Gutenberg output uses a form-aware WordPress KSES allowlist. Templates block direct access. Authentication and API requests stay on the server; all settings changes verify administrator capabilities and action nonces.
 
-Example:
-
-```plaintext
-[osm_events sectionid="67890" futureonly="false"]
-```
-
----
-
-## Admin Features
-
-- **General Tab**:
-  - View enabled sections and their current term IDs.
-  - Purge cached data.
-  - Reset all plugin configuration.
-
-- **Sections Enabled Tab**:
-  - List all available sections retrieved from OSM.
-  - Enable or disable specific sections.
-
-- **Authentication Tab**:
-  - Enter and manage your OSM **Client ID** and **Client Secret**.
-
-- **Advanced Options**:
-  - **Date Format**: Customize the date format used in the plugin. Default: `d/m/Y`.
-  - **Time Format**: Customize the time format used in the plugin. Default: `H:i`.
-
----
-
-## Caching
-
-The plugin caches the following data to reduce API calls:
-- **Sections**: Cached for 24 hours.
-- **Current Term IDs**: Cached for 24 hours per section.
-- **Programmes and Events**: Cached for 24 hours per section and term.
-
-Cached data is automatically refreshed when it expires.
-
----
-
-## Reset Configuration
-
-If you need to reset the plugin:
-1. Navigate to the **General** tab.
-2. Click the **Reset Configuration** button.
-3. All authentication details, enabled sections, and cached data will be deleted.
-
----
-
-## Frequently Asked Questions
-
-### 1. How often is the data refreshed?
-Data is cached for 24 hours and is refreshed automatically when the cache expires.
-
----
+See [development notes](docs/development-notes.md) and [Plugin Check results](docs/plugin-check-results.md) for verification and limitations. The renamed package has no Plugin Check findings in the isolated verification.
 
 ## License
 
-This plugin is licensed under the MIT License. See the LICENSE file for details.
-
----
-
-## Disclaimer
-
-**This plugin is not affiliated with Online Scout Manager. Use it at your own risk.**
+MIT. See [LICENCE](LICENCE).

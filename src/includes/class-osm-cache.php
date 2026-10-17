@@ -14,6 +14,10 @@ class OSM_Cache {
             return $cache['value'];
         }
 
+        if ( $cache ) {
+            self::delete( $key );
+        }
+
         return false;
     }
 
@@ -31,7 +35,7 @@ class OSM_Cache {
         update_option( "osm_cached_{$key}", [
             'value'   => $value,
             'expires' => $expires,
-        ] );
+        ], false );
     }
 
     /**
@@ -51,6 +55,11 @@ class OSM_Cache {
      */
     public static function clear_all() {
         global $wpdb;
-        $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE 'osm_cached_%'" );
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Discover current cache keys only for explicit purge; caching this list could retain deleted-account data. Each key is removed through delete_option below.
+        $option_names = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE %s", $wpdb->esc_like( 'osm_cached_' ) . '%' ) );
+        foreach ( $option_names as $option_name ) {
+            // WordPress invalidates its persistent option/object caches as well.
+            delete_option( $option_name );
+        }
     }
 }

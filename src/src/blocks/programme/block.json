@@ -1,12 +1,18 @@
 {
-    "apiVersion": 2,
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
     "name": "osm/programme",
     "title": "OSM Programme",
     "category": "widgets",
     "icon": "calendar",
-    "description": "Display the OSM programme for a section.",
+    "description": "Display the OSM programme for one or more sections.",
+    "textdomain": "online-scout-manager",
     "attributes": {
         "sectionid": {
+            "type": "string",
+            "default": ""
+        },
+        "sectionids": {
             "type": "string",
             "default": ""
         },
@@ -15,8 +21,11 @@
             "default": false
         }
     },
-    "editorScript": "build/programme-editor.js",
-    "editorStyle": "build/programme-editor.css",
-    "style": "build/programme-style.css",
+    "supports": {
+        "html": false
+    },
+    "editorScript": "osm-blocks-editor",
+    "editorStyle": "osm-blocks-editor",
+    "style": "osm-frontend-style",
     "render": "file:./render.php"
 }
